@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/* One token set, two themes. Night is the pitch default. */
+:root,
+:root[data-theme="night"] {
+  --canvas: #090e1a;
+  --panel: #0d1527;
+  --elev: #131e36;
+  --line: #1e293b;
+  --fg: #e2e8f0;
+  --muted: #94a3b8;
+  --zebra: #0f1a30;
+  --ok: #10b981;
+  --ok-fg: #34d399;
+  --ok-bg: rgba(16, 185, 129, 0.12);
+  --warn: #f59e0b;
+  --warn-fg: #fbbf24;
+  --warn-bg: rgba(245, 158, 11, 0.12);
+  --crit: #dc2626;
+  --crit-fg: #f87171;
+  --crit-bg: rgba(220, 38, 38, 0.14);
+  --fluid: #0891b2;
+  --fluid-fg: #22d3ee;
+  --fluid-bg: rgba(8, 145, 178, 0.14);
+  --shop: #f97316;
+  --shop-fg: #fb923c;
+  --shop-bg: rgba(249, 115, 22, 0.12);
+  --primary: #2563eb;
+  --primary-fg: #93c5fd;
+  --primary-bg: rgba(37, 99, 235, 0.16);
+  --slate: #334155;
+  --nav: #0b1222;
+  color-scheme: dark;
+}
+
+:root[data-theme="day"] {
+  --canvas: #f1f5f9;
+  --panel: #ffffff;
+  --elev: #f8fafc;
+  --line: #e2e8f0;
+  --fg: #0f172a;
+  --muted: #475569;
+  --zebra: #f8fafc;
+  --ok: #10b981;
+  --ok-fg: #047857;
+  --ok-bg: #ecfdf5;
+  --warn: #f59e0b;
+  --warn-fg: #b45309;
+  --warn-bg: #fffbeb;
+  --crit: #dc2626;
+  --crit-fg: #b91c1c;
+  --crit-bg: #fef2f2;
+  --fluid: #0891b2;
+  --fluid-fg: #0e7490;
+  --fluid-bg: #ecfeff;
+  --shop: #f97316;
+  --shop-fg: #c2410c;
+  --shop-bg: #fff7ed;
+  --primary: #2563eb;
+  --primary-fg: #1d4ed8;
+  --primary-bg: #eff6ff;
+  --slate: #475569;
+  --nav: #e9eef4;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-elev: var(--elev);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-zebra: var(--zebra);
+  --color-nav: var(--nav);
+  --color-ok: var(--ok);
+  --color-ok-fg: var(--ok-fg);
+  --color-ok-bg: var(--ok-bg);
+  --color-warn: var(--warn);
+  --color-warn-fg: var(--warn-fg);
+  --color-warn-bg: var(--warn-bg);
+  --color-crit: var(--crit);
+  --color-crit-fg: var(--crit-fg);
+  --color-crit-bg: var(--crit-bg);
+  --color-fluid: var(--fluid);
+  --color-fluid-fg: var(--fluid-fg);
+  --color-fluid-bg: var(--fluid-bg);
+  --color-shop: var(--shop);
+  --color-shop-fg: var(--shop-fg);
+  --color-shop-bg: var(--shop-bg);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-primary-bg: var(--primary-bg);
+  --color-slate: var(--slate);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, monospace;
+}
+
+body {
+  background: var(--canvas);
+  color: var(--fg);
+  font-family: var(--font-sans);
+}
+
+.font-mono,
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.flow-line {
+  stroke-dasharray: 6 6;
+  animation: flow 1.2s linear infinite;
+}
+@keyframes flow {
+  to {
+    stroke-dashoffset: -12;
+  }
+}
+
+dialog::backdrop {
+  background: rgba(2, 6, 23, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
