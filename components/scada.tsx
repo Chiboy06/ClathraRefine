@@ -162,7 +162,6 @@ export function CopyText({ text, short = 12 }: { text: string; short?: number })
     <button
       onClick={() => navigator.clipboard.writeText(text).then(() => setDone(true))}
       className="font-mono text-xs text-primary-fg underline-offset-2 hover:underline"
-      aria-label={`Copy ${text}`}
       title={text}
     >
       {text.slice(0, short)}… {done ? "copied" : "copy"}

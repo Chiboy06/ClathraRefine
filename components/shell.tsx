@@ -248,7 +248,7 @@ function Toggles() {
       <Segmented label="Data mode" value={mode} onChange={setMode} options={[{ value: "DEMO", label: "DEMO" }, { value: "LIVE", label: "LIVE" }]} />
       <Segmented label="Concentration unit" value={unit} onChange={setUnit} options={[{ value: "PCT", label: "Vol %" }, { value: "PPM", label: "PPM" }]} />
       <Segmented label="Currency" value={currency} onChange={setCurrency} options={[{ value: "NGN", label: "₦ NGN" }, { value: "USD", label: "$ USD" }]} />
-      <button onClick={() => setTheme(theme === "night" ? "day" : "night")} aria-label={`Switch to ${theme === "night" ? "Day" : "Night"} theme`} className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-line bg-elev px-2.5 text-xs font-semibold">
+      <button onClick={() => setTheme(theme === "night" ? "day" : "night")} aria-label={`${theme === "night" ? "Night" : "Day"} theme, switch to ${theme === "night" ? "Day" : "Night"}`} className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-line bg-elev px-2.5 text-xs font-semibold">
         {theme === "night" ? <Moon aria-hidden className="h-3.5 w-3.5" /> : <Sun aria-hidden className="h-3.5 w-3.5" />}
         {theme === "night" ? "Night" : "Day"}
       </button>

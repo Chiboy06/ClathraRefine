@@ -164,10 +164,10 @@ export default function Onboarding() {
           <div ref={logRef} role="log" aria-label="Connection log" className="h-72 overflow-y-auto rounded-md border border-line bg-[#05080f] p-4 font-mono text-xs text-slate-200">
             {lines.map((l, i) => (
               <div key={i} className={l.tone === "ok" ? "text-emerald-400" : l.tone === "crit" ? "text-red-400" : l.tone === "warn" ? "text-amber-300" : undefined}>
-                <span className="text-slate-500">{formatTime(l.at)}</span> {l.text}
+                <span className="text-slate-400">{formatTime(l.at)}</span> {l.text}
               </div>
             ))}
-            {!lines.length && <div className="text-slate-500">No device events yet.</div>}
+            {!lines.length && <div className="text-slate-400">No device events yet.</div>}
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-4">
             <div>

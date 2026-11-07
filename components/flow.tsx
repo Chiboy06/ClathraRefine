@@ -57,7 +57,7 @@ export function ProcessFlow({ active, onStage, selected }: { active: Set<StageId
           </>
         );
         return onStage ? (
-          <g key={s.id} role="button" tabIndex={0} aria-label={`${s.name}: ${on ? "flowing" : "no flow"}. Open tag detail`} onClick={() => onStage(s.id)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onStage(s.id)} className="cursor-pointer focus:outline-none [&:focus-visible>rect]:stroke-[var(--primary)]">
+          <g key={s.id} role="button" tabIndex={0} onClick={() => onStage(s.id)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onStage(s.id)} className="cursor-pointer focus:outline-none [&:focus-visible>rect]:stroke-[var(--primary)]">
             {content}
           </g>
         ) : (

@@ -205,7 +205,7 @@ export function EscalationStrip({ adc, mv }: { adc: number; mv: number }) {
           <div key={t.name} className={cx("border-r p-4 last:border-r-0", t.cls)} style={{ flexGrow: t.w, flexBasis: 0 }}>
             <div className="text-sm font-bold">{t.name}</div>
             <div className="font-mono text-xs tabular">{t.range}</div>
-            <div className="font-mono text-xs tabular opacity-80">{t.fw}</div>
+            <div className="font-mono text-xs tabular">{t.fw}</div>
           </div>
         ))}
         <div className="absolute inset-y-0 w-1 bg-fg transition-[left] duration-200" style={{ left: `${pos}%` }} aria-hidden />

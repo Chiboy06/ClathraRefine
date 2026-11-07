@@ -21,14 +21,14 @@ export function Page({ title, subtitle, actions, children }: { title: string; su
         </div>
         {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
       </div>
-      <div className="flex flex-col gap-8">{children}</div>
+      <div className="flex min-w-0 flex-col gap-8">{children}</div>
     </div>
   );
 }
 
 export function Card({ title, actions, children, className, tone }: { title?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; tone?: Tone }) {
   return (
-    <section className={cx("rounded-lg border bg-panel p-6", tone ? TONE_BORDER[tone] : "border-line", className)}>
+    <section className={cx("min-w-0 rounded-lg border bg-panel p-6", tone ? TONE_BORDER[tone] : "border-line", className)}>
       {(title || actions) && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           {title && <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">{title}</h2>}
@@ -197,7 +197,7 @@ export const inputCls = "min-h-10 w-full rounded-md border border-line bg-elev p
 
 export function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; label: string }) {
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex rounded-md border border-line bg-elev p-0.5">
+    <div role="radiogroup" aria-label={label} className="inline-flex flex-wrap rounded-md border border-line bg-elev p-0.5">
       {options.map((o) => (
         <button
           key={o.value}

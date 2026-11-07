@@ -71,7 +71,7 @@ export default function Marketplace() {
         <Empty title="No listings in this category yet">Try All Fractions, or check back when a seller lists a lot.</Empty>
       )}
 
-      <button onClick={() => cart.setOpen(true)} className="fixed bottom-6 right-6 z-20 inline-flex items-center gap-2 rounded-full bg-shop px-5 py-3 font-semibold text-slate-950 shadow-lg hover:bg-shop/90" aria-label={`Open cart, ${mounted ? cart.lines.length : 0} items`}>
+      <button onClick={() => cart.setOpen(true)} className="fixed bottom-6 right-6 z-20 inline-flex items-center gap-2 rounded-full bg-shop px-5 py-3 font-semibold text-slate-950 shadow-lg hover:bg-shop/90">
         <ShoppingCart aria-hidden className="h-5 w-5" /> Cart
         <span className="rounded-full bg-slate-950 px-2 text-xs text-white" data-testid="cart-count">
           {mounted ? cart.lines.length : 0}
