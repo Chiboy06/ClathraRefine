@@ -33,7 +33,7 @@ function Measurements() {
   const pl = p.plant;
 
   const trend = useMemo(() => {
-    const now = p.now || Date.now();
+    const now = p.now;
     const from = now - RANGES[range];
     const live = p.history.filter((h) => h.receivedAt >= from).map((h) => ({ t: h.receivedAt, ambient: h.ambient_mv, exhaust: h.exhaust_mv }));
     if (mode === "DEMO" && range !== "15m") {

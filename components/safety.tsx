@@ -11,13 +11,14 @@ import { formatDateTime } from "@/lib/format";
 
 function Initiator() {
   const { me } = useMe();
+  const { now } = usePlant();
   const s = me?.session;
   return (
     <div className="rounded-md border border-line bg-elev p-4 text-sm">
       <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted">Initiator</div>
       {s ? (
         <div>
-          <span className="font-semibold">{s.name}</span> · role <Mono>{s.role}</Mono> · {formatDateTime(Date.now())}
+          <span className="font-semibold">{s.name}</span> · role <Mono>{s.role}</Mono> · {now ? formatDateTime(now) : ""}
         </div>
       ) : (
         <div>Not signed in</div>

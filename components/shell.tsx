@@ -189,7 +189,8 @@ function UserMenu() {
               role="menuitem"
               onClick={async () => {
                 await fetch("/api/demo-login", { method: "DELETE" });
-                location.href = "/sign-in";
+                // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload drops in-memory session state after sign-out
+                window.location.assign("/sign-in");
               }}
               className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-sm hover:bg-elev"
             >
@@ -295,7 +296,8 @@ function IdleTimer() {
       if (clerkOut) await clerkOut();
       else {
         await fetch("/api/demo-login", { method: "DELETE" });
-        location.href = "/sign-in?reason=idle";
+        // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload drops in-memory session state after sign-out
+        window.location.assign("/sign-in?reason=idle");
       }
     };
     const reset = () => {

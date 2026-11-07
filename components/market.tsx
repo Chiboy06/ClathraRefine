@@ -2,12 +2,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { CreditCard, FileDown, FileText, Link2, Lock, Minus, Plus, ShieldCheck, ShoppingCart, Trash2 } from "lucide-react";
+import { Check, CreditCard, FileDown, FileText, Link2, Lock, Minus, Plus, ShieldCheck, ShoppingCart, Trash2 } from "lucide-react";
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Badge, Button, Empty, ErrorNote, Field, inputCls, LoadingPanel, Notice, postJson, SimTag, Table, Td, download, useFetch } from "./ui";
+import { Badge, Button, cx, Empty, ErrorNote, Field, inputCls, LoadingPanel, Notice, postJson, SimTag, Table, Td, download, useFetch } from "./ui";
 import { Drawer, Modal, Mono, CopyText, useMe } from "./scada";
 import { useCart, usePrefs } from "@/lib/store";
-import { priceCart } from "@/lib/cart";
+import { priceCart, type PricedLine } from "@/lib/cart";
 import { formatMoney, formatDateTime } from "@/lib/format";
 import { LOCATIONS, LOGISTICS, type Product } from "@/lib/demoData";
 import { can } from "@/lib/roleMatrix";
@@ -380,3 +380,23 @@ export function CartDrawer() {
     </Drawer>
   );
 }
+
+export type Order = { id: string; created_at: number; status: string; total_kobo: number; items: PricedLine[]; location: string; buyer_email: string; seller_id: string; paid_at?: number };
+const STEPS = ["pending_payment", "paid", "processing", "shipped", "delivered"];
+const LABEL: Record<string, string> = { pending_payment: "Pending payment", paid: "Paid", processing: "Processing", shipped: "Shipped", delivered: "Delivered", cancelled: "Cancelled" };
+
+export function OrderTrack({ status }: { status: string }) {
+  if (status === "cancelled") return <Badge tone="crit">Cancelled</Badge>;
+  const at = STEPS.indexOf(status);
+  return (
+    <ol className="flex flex-wrap items-center gap-2 text-xs" aria-label={`Order status: ${LABEL[status]}`}>
+      {STEPS.map((s, i) => (
+        <li key={s} className={cx("inline-flex items-center gap-1 rounded-full border px-2 py-1", i <= at ? "border-ok/50 bg-ok-bg text-ok-fg" : "border-line text-muted")} aria-current={i === at ? "step" : undefined}>
+          {i <= at && <Check aria-hidden className="h-3 w-3" />}
+          {LABEL[s]}
+        </li>
+      ))}
+    </ol>
+  );
+}
+

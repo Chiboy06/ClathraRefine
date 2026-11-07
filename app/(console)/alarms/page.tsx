@@ -59,7 +59,7 @@ function ShelveModal({ alarm, onClose }: { alarm: Alarm | null; onClose: () => v
         </Field>
         {err && <ErrorNote>{err}</ErrorNote>}
         <Button variant="primary" disabled={!reason.trim()} busy={busy} onClick={submit}>
-          <Archive aria-hidden className="h-4 w-4" /> Shelve until {formatTime(Date.now() + mins * 60_000).slice(0, 5)}
+          <Archive aria-hidden className="h-4 w-4" /> Shelve for {mins < 60 ? `${mins} minutes` : `${mins / 60} hours`}
         </Button>
       </div>
     </Modal>
@@ -86,7 +86,7 @@ export default function Alarms() {
     }
   };
 
-  const now = p.now || Date.now();
+  const now = p.now;
   const allActs = Object.values(p.activations).flat();
   const per10 = allActs.filter((t) => now - t <= 600_000).length;
   const standing = p.alarms.filter((a) => a.active && now - a.since > 600_000).length;

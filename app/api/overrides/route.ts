@@ -6,11 +6,13 @@ import { audit } from "@/lib/server/audit";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
   const gate = await requirePerm("read");
   if (!gate.ok) return gate.res;
   const all = await list("commands", 300);
-  return Response.json(all.filter((c) => c.kind !== "scram" && c.kind !== "ping"));
+  // ?view=commands returns SCRAM and ping history for the device page; default is override requests.
+  const commands = new URL(req.url).searchParams.get("view") === "commands";
+  return Response.json(all.filter((c) => (c.kind === "scram" || c.kind === "ping") === commands));
 }
 
 /** Records an override request. It does nothing until a second, different supervisor approves it. */

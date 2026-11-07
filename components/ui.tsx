@@ -1,14 +1,14 @@
 "use client";
-import { useEffect, useState, type ButtonHTMLAttributes, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { AlertTriangle, CheckCircle2, CircleDashed, Clock, Info, Loader2, OctagonAlert, ShieldCheck, XCircle, Inbox, FlaskConical } from "lucide-react";
 import type { Quality } from "@/lib/quality";
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
 
+const noopSub = () => () => {};
+/** False during server render and hydration, true after: for values that live only in the browser. */
 export function useMounted() {
-  const [m, setM] = useState(false);
-  useEffect(() => setM(true), []);
-  return m;
+  return useSyncExternalStore(noopSub, () => true, () => false);
 }
 
 export function Page({ title, subtitle, actions, children }: { title: string; subtitle?: ReactNode; actions?: ReactNode; children: ReactNode }) {
@@ -235,27 +235,26 @@ export function Table({ head, children, caption }: { head: ReactNode[]; children
 }
 export const Td = ({ children, mono, className }: { children: ReactNode; mono?: boolean; className?: string }) => <td className={cx("px-6 py-4 align-top", mono && "font-mono tabular", className)}>{children}</td>;
 
-/** Small fetch hook: loading, error and data, with manual reload. */
+/** Small fetch hook: loading, error and data, with manual reload. Keeps the last data while reloading. */
 export function useFetch<T>(url: string | null, deps: unknown[] = []) {
-  const [state, setState] = useState<{ data?: T; error?: string; loading: boolean }>({ loading: !!url });
   const [n, setN] = useState(0);
+  const key = url ? `${url}|${n}|${JSON.stringify(deps)}` : null;
+  const [st, setSt] = useState<{ key: string | null; data?: T; error?: string }>({ key: null });
   useEffect(() => {
-    if (!url) return;
+    if (!key || !url) return;
     let alive = true;
-    setState((s) => ({ ...s, loading: true }));
     fetch(url, { cache: "no-store" })
       .then(async (r) => {
         if (!r.ok) throw new Error((await r.text()) || `HTTP ${r.status}`);
-        return r.json();
+        return r.json() as Promise<T>;
       })
-      .then((data) => alive && setState({ data, loading: false }))
-      .catch((e) => alive && setState({ error: e.message, loading: false }));
+      .then((data) => alive && setSt({ key, data }))
+      .catch((e: Error) => alive && setSt((s) => ({ key, data: s.data, error: e.message })));
     return () => {
       alive = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [url, n, ...deps]);
-  return { ...state, reload: () => setN((x) => x + 1) };
+  }, [key, url]);
+  return { data: st.data, error: st.key === key ? st.error : undefined, loading: !!key && st.key !== key, reload: () => setN((x) => x + 1) };
 }
 
 export async function postJson<T = unknown>(url: string, body: unknown, method = "POST"): Promise<T> {
