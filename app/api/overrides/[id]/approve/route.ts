@@ -15,25 +15,30 @@ export async function POST(req: Request, ctx: RouteContext<"/api/overrides/[id]/
   if (!b.ok) return b.res;
   const s = gate.session;
 
-  const hash = process.env.SUPERVISOR_PIN_HASH;
-  if (!hash) return new Response("Supervisor PIN is not configured on the server", { status: 503 });
+  const reqItem = await get<OverrideRequest & Record<string, unknown>>("commands", id);
+  const err = approvalError(reqItem, s.userId, s.role);
+  if (err) {
+    await audit(s, "approve_override", id, "refused", err);
+    return new Response(err, { status: 409 });
+  }
+
+  // Accept the bcrypt hash raw or base64-encoded: Next's env loader expands "$" in values when a .env file exists.
+  const raw = process.env.SUPERVISOR_PIN_HASH ?? "";
+  const hash = raw.startsWith("$2") ? raw : Buffer.from(raw, "base64").toString("utf8");
+  if (!hash.startsWith("$2")) return new Response("Supervisor PIN is not configured on the server", { status: 503 });
   if (!(await bcrypt.compare(b.data.pin, hash))) {
     await audit(s, "approve_override", id, "refused", "wrong PIN");
     return new Response("PIN not accepted", { status: 403 });
   }
 
-  const reqItem = await get<OverrideRequest & Record<string, unknown>>("commands", id);
-  const err = approvalError(reqItem, s.userId, s.role);
   // The store enforces the same rule as a condition, so a race cannot slip a self-approval through.
-  const ok =
-    !err &&
-    (await update("commands", id, { status: "approved", approved_by: s.userId, approved_name: s.name, approved_at: Date.now() }, [
+  const ok = await update("commands", id, { status: "approved", approved_by: s.userId, approved_name: s.name, approved_at: Date.now() }, [
       { field: "status", eq: "pending" },
       { field: "requested_by", ne: s.userId },
-    ]));
+    ]);
   if (!ok) {
-    await audit(s, "approve_override", id, "refused", err ?? "condition failed");
-    return new Response(err ?? "Needs a pending request and a different supervisor", { status: 409 });
+    await audit(s, "approve_override", id, "refused", "condition failed");
+    return new Response("Needs a pending request and a different supervisor", { status: 409 });
   }
 
   const r = reqItem!;
