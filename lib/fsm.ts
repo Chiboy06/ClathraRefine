@@ -4,6 +4,8 @@ import { FW } from "./process";
 
 export type Level = "NORMAL" | "WARNING" | "CRITICAL";
 export type Scrubber = "IDLE" | "INTAKE_ACTIVE" | "SCRUBBING" | "PURGING";
+export type Mode = "AUTO" | "MANUAL";
+export const MANUAL_TIMEOUT_MS = 10 * 60_000;
 
 export type BoardState = {
   level: Level;
@@ -17,6 +19,10 @@ export type BoardState = {
   intakeStart: number;
   clearedAt: number;
   relayMask: number;
+  mode: Mode;
+  manualFan: boolean;
+  manualPump: boolean;
+  lastCmdAt: number;
 };
 
 export type StepInput = {
@@ -40,6 +46,10 @@ export const initialBoard = (): BoardState => ({
   intakeStart: 0,
   clearedAt: 0,
   relayMask: 0,
+  mode: "AUTO",
+  manualFan: false,
+  manualPump: false,
+  lastCmdAt: 0,
 });
 
 // bit 0 = relay 1 (fan) ... bit 5 = relay 6 (siren)
@@ -103,8 +113,22 @@ export function stepBoard(prev: BoardState, i: StepInput): BoardState {
     mask = setBit(mask, RELAY_BIT.green, true);
   }
 
+  // ---- Mode: automatic safety always wins ----
+  if (s.mode === "MANUAL") {
+    const exhaustGas = i.exhaustMv >= FW.EXH_ON_MV;
+    if (exhaustGas || s.level === "CRITICAL" || s.sensorFault || s.scram || s.tripLatched || now - s.lastCmdAt > MANUAL_TIMEOUT_MS) {
+      s.mode = "AUTO";
+      s.manualFan = false;
+      s.manualPump = false;
+    }
+  }
+
   // ---- ExhaustControl ----
-  if (s.scram) {
+  if (s.mode === "MANUAL") {
+    mask = setBit(mask, RELAY_BIT.fan, s.manualFan);
+    mask = setBit(mask, RELAY_BIT.pump, s.manualPump);
+    s.scrubber = s.manualPump ? "SCRUBBING" : s.manualFan ? "INTAKE_ACTIVE" : "IDLE";
+  } else if (s.scram) {
     mask = setBit(mask, RELAY_BIT.pump, false);
     mask = setBit(mask, RELAY_BIT.fan, true);
     s.scrubber = "IDLE";
@@ -153,4 +177,34 @@ export function stepBoard(prev: BoardState, i: StepInput): BoardState {
   }
   s.relayMask = mask;
   return s;
+}
+
+export type Command = { cmd: "mode"; value: "manual" | "auto" } | { cmd: "fan" | "pump"; value: "on" | "off" };
+
+/** Board-side interlocks for the manual commands (mirrors the firmware). The board refuses unsafe commands with a reason. */
+export function boardCommand(prev: BoardState, c: Command, now: number): { state: BoardState; accepted: boolean; reason?: string } {
+  const s = { ...prev };
+  const refuse = (reason: string) => ({ state: prev, accepted: false, reason });
+  if (c.cmd === "mode") {
+    if (c.value === "auto") return { state: { ...s, mode: "AUTO", manualFan: false, manualPump: false, lastCmdAt: now }, accepted: true };
+    if (s.tripLatched) return refuse("Trip latched: manual mode not allowed");
+    if (s.scram) return refuse("SCRAM active: manual mode not allowed");
+    if (s.warmingUp) return refuse("Sensors warming up: manual mode not allowed");
+    if (s.gasActive) return refuse("Exhaust gas active: automatic control required");
+    return { state: { ...s, mode: "MANUAL", manualFan: relayOn(s.relayMask, 1), manualPump: relayOn(s.relayMask, 2), lastCmdAt: now }, accepted: true };
+  }
+  if (s.mode !== "MANUAL") return refuse("Manual mode required");
+  if (c.cmd === "fan") {
+    if (c.value === "off") {
+      if (s.gasActive) return refuse("Exhaust gas active: fan must stay on");
+      if (s.tripLatched || s.scram) return refuse("Trip or SCRAM active: fan must stay on");
+      if (s.manualPump) return refuse("Stop the pump before the fan");
+    }
+    return { state: { ...s, manualFan: c.value === "on", lastCmdAt: now }, accepted: true };
+  }
+  if (c.value === "on") {
+    if (!s.manualFan) return refuse("Fan must be on before the pump");
+    if (s.tripLatched) return refuse("Trip latched: pump not allowed");
+  }
+  return { state: { ...s, manualPump: c.value === "on", lastCmdAt: now }, accepted: true };
 }

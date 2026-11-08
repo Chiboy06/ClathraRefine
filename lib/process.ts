@@ -85,3 +85,12 @@ export const ADC_TIERS = { warn: 1200, crit: 2300, max: 4095 } as const;
 // ---- Units ----
 export const pctToPpm = (pct: number) => Math.round(pct * 10_000);
 export const ppmToPct = (ppm: number) => ppm / 10_000;
+
+// ---- Bench capture panel (remodification brief section 5) ----
+export const CO2_DENSITY_G_PER_L = 1.8; // near room temperature; adjustable
+
+/** CO2 reduction % = (inlet − outlet) / inlet × 100. */
+export const reductionPct = (inPpm: number, outPpm: number) => (inPpm > 0 ? ((inPpm - outPpm) / inPpm) * 100 : 0);
+
+/** Capture rate in g/min = gas flow (L/min) × (inlet fraction − outlet fraction) × CO2 density (g/L). */
+export const captureGPerMin = (gasLpm: number, inPpm: number, outPpm: number, density = CO2_DENSITY_G_PER_L) => Math.max(0, gasLpm * ((inPpm - outPpm) / 1e6) * density);
