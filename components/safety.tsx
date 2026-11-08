@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OctagonX, ShieldAlert, UserCheck, Users } from "lucide-react";
 import { Badge, Button, Empty, ErrorNote, Field, inputCls, LoadingPanel, Notice, postJson, Table, Td, useFetch } from "./ui";
 import { Modal, Mono, useMe } from "./scada";
@@ -32,6 +32,12 @@ export function ScramButton({ compact }: { compact?: boolean }) {
   const { me } = useMe();
   const [open, setOpen] = useState(false);
   const allowed = can(me?.session?.role, "scram");
+  useEffect(() => {
+    if (!compact) return; // only the header button listens, so one modal opens
+    const onOpen = () => allowed && setOpen(true);
+    window.addEventListener("clathra:open-scram", onOpen);
+    return () => window.removeEventListener("clathra:open-scram", onOpen);
+  }, [compact, allowed]);
   return (
     <>
       <Button

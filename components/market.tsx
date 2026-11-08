@@ -158,7 +158,7 @@ export function ProductCard({ p, onCoa, onLedger }: { p: Product; onCoa: (p: Pro
   }[p.secondary];
   return (
     <article className="flex flex-col overflow-hidden rounded-lg border border-line bg-panel" data-testid="product-card">
-      <Link href={`/marketplace/p/${p.id}`} className="block bg-elev">
+      <Link href={`/app/marketplace/p/${p.id}`} className="block bg-elev">
         <Image src={p.image} alt={p.alt} width={640} height={360} className="h-44 w-full object-cover" unoptimized />
       </Link>
       <div className="flex flex-1 flex-col gap-4 p-6">
@@ -171,11 +171,14 @@ export function ProductCard({ p, onCoa, onLedger }: { p: Product; onCoa: (p: Pro
           ))}
         </div>
         <h3 className="text-base font-bold leading-snug">
-          <Link href={`/marketplace/p/${p.id}`} className="hover:underline">
+          <Link href={`/app/marketplace/p/${p.id}`} className="hover:underline">
             {p.title}
           </Link>
         </h3>
         <p className="text-sm text-muted">{p.description}</p>
+        <p className="text-xs text-muted">
+          Captured at <span className="font-semibold text-fg">{p.lot.site}</span> on {p.lot.period}
+        </p>
         {p.specs.length > 0 && (
           <ul className="flex flex-wrap gap-1.5" aria-label="Specifications">
             {p.specs.map((s) => (

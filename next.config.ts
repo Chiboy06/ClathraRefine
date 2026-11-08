@@ -26,6 +26,16 @@ const nextConfig: NextConfig = {
       "*.css": { loaders: ["@tailwindcss/turbopack"], as: "*.css" },
     },
   },
+  // Old console paths moved under /app (docs/MODIFICATION_MAP.md).
+  async redirects() {
+    const moved = ["fleet", "devices/:p*", "events", "shift", "measurements", "departments", "reports", "relays", "alarms", "marketplace/:p*", "marketplace", "audits", "audit-history", "audit-log", "support", "admin"];
+    return [
+      { source: "/dashboard", destination: "/app", permanent: true },
+      { source: "/onboarding", destination: "/app/connect", permanent: true },
+      { source: "/welcome", destination: "/app/organisation", permanent: true },
+      ...moved.map((m) => ({ source: `/${m}`, destination: `/app/${m}`, permanent: true })),
+    ];
+  },
   async headers() {
     return [
       {

@@ -40,7 +40,7 @@ export default function Fleet() {
                     {!real && <SimTag kind="Demo" />}
                   </Td>
                   <Td mono>
-                    <Link href={`/devices/${encodeURIComponent(s.thing)}`} className="hover:underline">
+                    <Link href={`/app/devices/${encodeURIComponent(s.thing)}`} className="hover:underline">
                       {s.thing}
                     </Link>
                   </Td>

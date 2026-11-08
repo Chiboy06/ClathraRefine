@@ -9,10 +9,10 @@ import { Button, ErrorNote, Notice, postJson } from "./ui";
 const appearance = { variables: { colorPrimary: "#2563eb", fontFamily: "var(--font-inter)", borderRadius: "0.375rem" } };
 
 export function ClerkSignIn() {
-  return <SignIn appearance={appearance} forceRedirectUrl="/dashboard" />;
+  return <SignIn appearance={appearance} forceRedirectUrl="/app" />;
 }
 export function ClerkSignUp() {
-  return <SignUp appearance={appearance} forceRedirectUrl="/welcome" />;
+  return <SignUp appearance={appearance} forceRedirectUrl="/app/get-started" />;
 }
 
 /** Demo quick-login: local runs and tests only. The server refuses it whenever Clerk is configured. */
@@ -27,7 +27,7 @@ export function DemoQuickLogin() {
     try {
       await postJson("/api/demo-login", { userId: id });
       const next = params.get("next");
-      router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard");
+      router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/app");
       router.refresh();
     } catch (e) {
       setErr((e as Error).message);

@@ -1,6 +1,9 @@
 "use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { crumbs } from "./nav";
 import { useEffect, useState, useSyncExternalStore, type ButtonHTMLAttributes, type ReactNode } from "react";
-import { AlertTriangle, CheckCircle2, CircleDashed, Clock, Info, Loader2, OctagonAlert, ShieldCheck, XCircle, Inbox, FlaskConical } from "lucide-react";
+import { AlertTriangle, ChevronRight, CheckCircle2, CircleDashed, Clock, Info, Loader2, OctagonAlert, ShieldCheck, XCircle, Inbox, FlaskConical } from "lucide-react";
 import type { Quality } from "@/lib/quality";
 
 export const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ");
@@ -11,12 +14,40 @@ export function useMounted() {
   return useSyncExternalStore(noopSub, () => true, () => false);
 }
 
+function Breadcrumbs() {
+  const path = usePathname();
+  const items = crumbs(path);
+  if (items.length < 2) return null;
+  return (
+    <nav aria-label="Breadcrumb" className="mb-2">
+      <ol className="flex flex-wrap items-center gap-1 text-sm text-muted">
+        {items.map((c, i) => (
+          <li key={i} className="flex items-center gap-1">
+            {i > 0 && <ChevronRight aria-hidden className="h-3.5 w-3.5" />}
+            {c.href && i < items.length - 1 ? (
+              <Link href={c.href} className="hover:text-fg">
+                {c.label}
+              </Link>
+            ) : (
+              <span aria-current={i === items.length - 1 ? "page" : undefined} className={i === items.length - 1 ? "text-fg" : undefined}>
+                {c.label}
+              </span>
+            )}
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
+}
+
+/** One header pattern on every app page: breadcrumbs, title, one-line purpose, primary action on the right. */
 export function Page({ title, subtitle, actions, children }: { title: string; subtitle?: ReactNode; actions?: ReactNode; children: ReactNode }) {
   return (
     <div className="mx-auto max-w-7xl p-6 md:p-8 lg:p-10">
+      <Breadcrumbs />
       <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+        <div className="min-w-0">
+          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-[-0.02em]">{title}</h1>
           {subtitle && <div className="mt-1 text-sm text-muted">{subtitle}</div>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-3">{actions}</div>}
@@ -28,7 +59,7 @@ export function Page({ title, subtitle, actions, children }: { title: string; su
 
 export function Card({ title, actions, children, className, tone }: { title?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; tone?: Tone }) {
   return (
-    <section className={cx("min-w-0 rounded-lg border bg-panel p-6", tone ? TONE_BORDER[tone] : "border-line", className)}>
+    <section className={cx("min-w-0 rounded-2xl border bg-panel p-6", tone ? TONE_BORDER[tone] : "border-line", className)}>
       {(title || actions) && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           {title && <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">{title}</h2>}
@@ -113,7 +144,7 @@ export function Button({ variant = "ghost", busy, className, children, ...rest }
       {...rest}
       disabled={rest.disabled || busy}
       className={cx(
-        "inline-flex min-h-10 items-center justify-center gap-2 rounded-md border px-4 py-2 text-sm font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50",
         BTN[variant],
         className,
       )}
@@ -193,7 +224,7 @@ export function Field({ label, hint, children, id }: { label: string; hint?: Rea
     </div>
   );
 }
-export const inputCls = "min-h-10 w-full rounded-md border border-line bg-elev px-3 py-2 text-sm text-fg placeholder:text-muted";
+export const inputCls = "min-h-10 w-full rounded-lg border border-line bg-elev px-3 py-2 text-sm text-fg placeholder:text-muted";
 
 export function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; label: string }) {
   return (

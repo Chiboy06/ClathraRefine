@@ -1,12 +1,11 @@
 "use client";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { SignOutButton, useClerk } from "@clerk/nextjs";
-import {
-  Activity, AlarmClock, BarChart3, Bell, Boxes, ClipboardCheck, ClipboardList, Cpu, Factory, FileClock, FileText, Gauge, History, LayoutDashboard, LifeBuoy,
-  LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Radio, ReceiptText, ScrollText, Search, Settings, ShoppingCart, Store, Sun, ToggleRight, Wifi, WifiOff, X, Tag as TagIcon, Network,
-} from "lucide-react";
+import { Activity, AlarmClock, FlaskConical, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Radio, ShoppingCart, Sun, Wifi, WifiOff, X } from "lucide-react";
+import { NAV, isActive } from "./nav";
+import { CommandPalette, NotificationCentre } from "./palette";
 import { cx, Segmented, useMounted } from "./ui";
 import { useMe } from "./scada";
 import { ScramButton } from "./safety";
@@ -14,45 +13,7 @@ import { usePrefs, useCart } from "@/lib/store";
 import { usePlant } from "@/lib/telemetry/usePlant";
 import { bannerAlarm } from "@/lib/alarms";
 import { formatTime } from "@/lib/format";
-import { TAGS } from "@/lib/tags";
 import { CartDrawer } from "./market";
-
-type NavItem = { href: string; label: string; icon: typeof Gauge };
-export const NAV: { group: string; items: NavItem[] }[] = [
-  { group: "Operations", items: [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/fleet", label: "Fleet", icon: Network },
-    { href: "/devices/ESP32S3-N16R8-HARNESS-01", label: "Device", icon: Cpu },
-    { href: "/events", label: "Event journal", icon: ScrollText },
-    { href: "/shift", label: "Shift log", icon: ClipboardList },
-  ] },
-  { group: "Process", items: [
-    { href: "/measurements", label: "Measurements", icon: Gauge },
-    { href: "/departments", label: "Departments", icon: Factory },
-    { href: "/reports", label: "Reports", icon: BarChart3 },
-  ] },
-  { group: "Safety", items: [
-    { href: "/relays", label: "Relay deck", icon: ToggleRight },
-    { href: "/alarms", label: "Alarms", icon: Bell },
-  ] },
-  { group: "Marketplace", items: [
-    { href: "/marketplace", label: "Gas marketplace", icon: Store },
-    { href: "/marketplace/orders", label: "My orders", icon: ReceiptText },
-    { href: "/marketplace/rfq", label: "RFQs", icon: FileText },
-    { href: "/marketplace/seller", label: "Seller centre", icon: Boxes },
-    { href: "/pricing", label: "Pricing", icon: TagIcon },
-  ] },
-  { group: "Compliance", items: [
-    { href: "/audits", label: "Audit workspace", icon: ClipboardCheck },
-    { href: "/audit-history", label: "Audit history", icon: History },
-    { href: "/audit-log", label: "Audit trail", icon: FileClock },
-  ] },
-  { group: "Support", items: [
-    { href: "/support", label: "Field support", icon: LifeBuoy },
-    { href: "/onboarding", label: "Device onboarding", icon: Radio },
-  ] },
-  { group: "Administration", items: [{ href: "/admin", label: "Admin", icon: Settings }] },
-];
 
 function Sidebar({ expanded, onToggle, mobileOpen, onCloseMobile }: { expanded: boolean; onToggle: () => void; mobileOpen: boolean; onCloseMobile: () => void }) {
   const path = usePathname();
@@ -63,7 +24,7 @@ function Sidebar({ expanded, onToggle, mobileOpen, onCloseMobile }: { expanded: 
           {wide ? <div className="px-5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">{g.group}</div> : <div className="mx-3 mb-2 border-t border-line" aria-hidden />}
           <ul>
             {g.items.map((it) => {
-              const active = path === it.href || (it.href !== "/marketplace" && path.startsWith(it.href + "/")) || (it.href === "/marketplace" && path.startsWith("/marketplace/p/"));
+              const active = isActive(path, it.href);
               return (
                 <li key={it.href}>
                   <Link
@@ -116,35 +77,6 @@ function Sidebar({ expanded, onToggle, mobileOpen, onCloseMobile }: { expanded: 
         </div>
       )}
     </>
-  );
-}
-
-const SEARCH = [...NAV.flatMap((g) => g.items.map((i) => ({ label: i.label, href: i.href }))), ...TAGS.map((t) => ({ label: `${t.id} ${t.name}`, href: `/measurements?tag=${t.id}` }))];
-
-function SearchBox() {
-  const router = useRouter();
-  const [q, setQ] = useState("");
-  return (
-    <form
-      role="search"
-      className="relative hidden min-w-0 flex-1 md:block md:max-w-xs"
-      onSubmit={(e) => {
-        e.preventDefault();
-        const hit = SEARCH.find((s) => s.label.toLowerCase().includes(q.toLowerCase()));
-        if (hit) router.push(hit.href);
-      }}
-    >
-      <label htmlFor="global-search" className="sr-only">
-        Search pages and tags
-      </label>
-      <Search aria-hidden className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-      <input id="global-search" list="search-list" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search pages and tags (AT-101)" className="min-h-10 w-full rounded-md border border-line bg-elev py-2 pl-9 pr-3 text-sm placeholder:text-muted" />
-      <datalist id="search-list">
-        {SEARCH.map((s) => (
-          <option key={s.href + s.label} value={s.label} />
-        ))}
-      </datalist>
-    </form>
   );
 }
 
@@ -226,7 +158,7 @@ function AlarmBanner() {
   if (!top) return null;
   const crit = top.priority === "critical";
   return (
-    <Link href="/alarms" role="alert" className={cx("flex items-center gap-2 border-b px-4 py-2 text-sm font-semibold md:px-6", crit ? "border-crit/60 bg-crit-bg text-crit-fg" : "border-warn/50 bg-warn-bg text-warn-fg")}>
+    <Link href="/app/alarms" role="alert" className={cx("flex items-center gap-2 border-b px-4 py-2 text-sm font-semibold md:px-6", crit ? "border-crit/60 bg-crit-bg text-crit-fg" : "border-warn/50 bg-warn-bg text-warn-fg")}>
       <AlarmClock aria-hidden className="h-4 w-4 shrink-0" />
       <span className="uppercase">{top.priority}</span>
       <span className="font-mono">{top.tag}</span>
@@ -262,7 +194,8 @@ function ModeBadge() {
   if (!m) return null;
   return (
     <span data-testid="mode-badge" className={cx("rounded-md border px-2 py-1 font-mono text-xs font-bold", mode === "LIVE" ? "border-ok/50 bg-ok-bg text-ok-fg" : "border-warn/50 bg-warn-bg text-warn-fg")}>
-      {mode === "LIVE" ? "● LIVE" : "◆ DEMO"}
+      {mode === "LIVE" ? <Radio aria-hidden className="mr-1 inline h-3.5 w-3.5" /> : <FlaskConical aria-hidden className="mr-1 inline h-3.5 w-3.5" />}
+      {mode}
     </span>
   );
 }
@@ -337,11 +270,12 @@ export function Shell({ children }: { children: ReactNode }) {
             <button onClick={() => setMobile(true)} aria-label="Open navigation" className="rounded p-2 text-muted hover:bg-elev lg:hidden">
               <Menu className="h-5 w-5" />
             </button>
-            <SearchBox />
+            <CommandPalette />
             <ModeBadge />
             <LinkStatus />
             <div className="ml-auto flex flex-wrap items-center gap-2">
               <Toggles />
+              <NotificationCentre />
               <CartButton />
               <ScramButton compact />
               <UserMenu />

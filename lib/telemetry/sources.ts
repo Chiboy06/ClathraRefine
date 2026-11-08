@@ -47,6 +47,11 @@ export class ScenarioSource implements TelemetrySource {
   triggerLeak() {
     this.leakAt = this.uptime;
   }
+  /** Look-ahead of the scripted profile: what the reading will be over the next `seconds`. DEMO only. */
+  lookAhead(seconds = 30, step = 2): { t: number; v: number }[] {
+    const now = Date.now();
+    return Array.from({ length: Math.floor(seconds / step) + 1 }, (_, i) => ({ t: now + i * step * 1000, v: Math.round(this.ambientAt(this.uptime + i * step * 1000, this.t + i)) }));
+  }
   get leakActive() {
     return this.leakAt !== null;
   }
@@ -58,15 +63,19 @@ export class ScenarioSource implements TelemetrySource {
     this.pending.ack = true;
   }
 
-  private ambientAt(): number {
-    const base = adcToMv(PLANT.ambientAdc) + wobble(this.t, 12, 7);
+  /** Scenario ambient profile at a given uptime. Also used as the DEMO look-ahead (Simulated forecast). */
+  ambientAt(uptime = this.uptime, t = this.t): number {
+    const base = adcToMv(PLANT.ambientAdc) + wobble(t, 12, 7);
     if (this.leakAt === null) return base;
-    const s = (this.uptime - this.leakAt) / 1000;
+    const s = (uptime - this.leakAt) / 1000;
+    if (s < 0) return base;
     // warning, critical trip, auto SCRAM, clear, ACK recovery
-    if (s < 4) return base + (1500 - base) * (s / 4);
-    if (s < 10) return 1650 + wobble(this.t, 30, 2);
-    if (s < 22) return 2950 + wobble(this.t, 40, 2);
-    if (s < 30) return 1500 - (s - 22) * 100;
+    // A slow build-up first, so the forecast crosses the thresholds before the reading does.
+    if (s < 16) return base + (1000 - base) * (s / 16);
+    if (s < 20) return 1000 + (1650 - 1000) * ((s - 16) / 4);
+    if (s < 26) return 1650 + wobble(t, 30, 2);
+    if (s < 38) return 2950 + wobble(t, 40, 2);
+    if (s < 46) return 1500 - (s - 38) * 100;
     return base;
   }
 
@@ -77,10 +86,10 @@ export class ScenarioSource implements TelemetrySource {
     const ambientMv = Math.round(this.ambientAt());
     const leakS = this.leakAt === null ? -1 : (this.uptime - this.leakAt) / 1000;
     // The scripted operator presses SCRAM during the critical phase, and ACK twice later (silence, then reset).
-    if (leakS >= 14 && leakS < 16) this.pending.scram = true;
-    if (leakS >= 18 && leakS < 20) this.pending.ack = true;
+    if (leakS >= 30 && leakS < 32) this.pending.scram = true;
     if (leakS >= 34 && leakS < 36) this.pending.ack = true;
-    if (leakS >= 40) this.leakAt = null;
+    if (leakS >= 50 && leakS < 52) this.pending.ack = true;
+    if (leakS >= 56) this.leakAt = null;
     this.board = stepBoard(this.board, { uptimeMs: this.uptime, exhaustMv, ambientMv, scramRequest: this.pending.scram, ackPressed: this.pending.ack });
     this.pending = {};
     this.emit?.(toSample(this.board, { uptimeMs: this.uptime, exhaustMv, ambientMv, ts: Date.now() }));

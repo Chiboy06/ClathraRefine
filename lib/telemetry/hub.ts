@@ -275,6 +275,10 @@ class Hub {
     this.alarmsMap.set(alarmId, alarmReduce(a, { type: "shelve", reason, until }));
     this.set({ alarms: [...this.alarmsMap.values()] });
   }
+  /** DEMO look-ahead from the scenario (Simulated). LIVE forecasts come from lib/model.json via the predict page. */
+  demoForecast(seconds = 30) {
+    return this.snap.mode === "DEMO" ? this.scenario.lookAhead(seconds) : [];
+  }
   triggerLeak() {
     if (this.snap.mode !== "DEMO") return;
     this.scenario.triggerLeak();

@@ -6,7 +6,7 @@ test.beforeEach(async ({ page }) => prefs(page, { mode: "DEMO" }));
 
 test("a viewer cannot SCRAM", async ({ page }) => {
   await login(page, "demo-viewer");
-  await page.goto("/dashboard");
+  await page.goto("/app");
   await expect(page.getByRole("button", { name: "Master SCRAM" }).first()).toBeDisabled();
   const r = await page.request.post("/api/scram", { data: { mode: "DEMO", confirm: true } });
   expect(r.status()).toBe(403);
@@ -14,7 +14,7 @@ test("a viewer cannot SCRAM", async ({ page }) => {
 
 test("an operator SCRAM opens the safety modal and is audited", async ({ page }) => {
   await login(page, "demo-operator");
-  await page.goto("/dashboard");
+  await page.goto("/app");
   await page.getByRole("button", { name: "Master SCRAM" }).first().click();
   const dlg = page.getByRole("dialog");
   await expect(dlg.getByText("Consequence:")).toBeVisible();
@@ -30,7 +30,7 @@ test("an operator SCRAM opens the safety modal and is audited", async ({ page })
 
 test("a supervisor cannot approve their own override; a second supervisor can", async ({ page }) => {
   await login(page, "demo-supervisor");
-  await page.goto("/relays");
+  await page.goto("/app/relays");
   await page.getByRole("button", { name: "Pulse test" }).first().click();
   let dlg = page.getByRole("dialog");
   await dlg.getByLabel("Reason").fill("Monthly lamp check");
@@ -60,7 +60,7 @@ test("a supervisor cannot approve their own override; a second supervisor can", 
 
 test("add to cart, proforma PDF, Paystack test checkout", async ({ page }) => {
   await login(page, "demo-buyer");
-  await page.goto("/marketplace");
+  await page.goto("/app/marketplace");
   await page.getByRole("button", { name: "Add to Cart / Request RFQ" }).first().click();
   const dlg = page.getByRole("dialog", { name: "Cart and RFQ" });
   await expect(dlg.getByTestId("cart-total")).toContainText("₦");
@@ -77,7 +77,7 @@ test("add to cart, proforma PDF, Paystack test checkout", async ({ page }) => {
 
 test("Trigger leak drives alarms through warning, critical, SCRAM and recovery", async ({ page }) => {
   await login(page, "demo-operator");
-  await page.goto("/alarms");
+  await page.goto("/app/alarms");
   await page.getByTestId("trigger-leak").click();
   const level = page.getByTestId("ambient-level");
   const flags = page.getByTestId("board-flags");

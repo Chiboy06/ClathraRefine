@@ -59,7 +59,7 @@ export async function POST(req: Request) {
       reference: order_id,
       subaccount,
       bearer: "account",
-      callback_url: `${new URL(req.url).origin}/marketplace/orders`,
+      callback_url: `${new URL(req.url).origin}/app/marketplace/orders`,
       metadata: { order_id },
     }),
   })

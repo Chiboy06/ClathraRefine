@@ -9,7 +9,7 @@ export function PublicHeader() {
           <Activity aria-hidden className="h-5 w-5 text-fluid" /> ClathraRefine
         </Link>
         <nav aria-label="Public" className="ml-auto flex flex-wrap items-center gap-2 text-sm">
-          <Link href="/marketplace" className="rounded-md px-3 py-2 hover:bg-elev">
+          <Link href="/app/marketplace" className="rounded-md px-3 py-2 hover:bg-elev">
             Marketplace
           </Link>
           <Link href="/pricing" className="rounded-md px-3 py-2 hover:bg-elev">
@@ -40,16 +40,16 @@ export function PublicFooter() {
           <p className="mt-2">The MQ-2 detects combustible gases and smoke, not CO2. CO2 figures are simulated. This is a prototype, not a certified safety system.</p>
         </div>
         <nav aria-label="Footer" className="flex flex-col gap-1">
-          <Link href="/dashboard" className="hover:text-fg">
+          <Link href="/app" className="hover:text-fg">
             SCADA console
           </Link>
-          <Link href="/marketplace" className="hover:text-fg">
+          <Link href="/app/marketplace" className="hover:text-fg">
             Gas marketplace
           </Link>
           <Link href="/pricing" className="hover:text-fg">
             Pricing
           </Link>
-          <Link href="/support" className="hover:text-fg">
+          <Link href="/app/support" className="hover:text-fg">
             Field support
           </Link>
         </nav>

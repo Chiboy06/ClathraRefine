@@ -1,29 +1,16 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC = [
-  "/",
-  "/pricing",
-  "/marketplace",
-  "/marketplace/p/(.*)",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/api/market/products(.*)",
-  "/api/paystack/webhook",
-  "/api/pdf/(.*)",
-  "/api/ledger",
-  "/api/settings",
-  "/api/me",
-  "/api/demo-login",
-];
-const isPublic = createRouteMatcher(PUBLIC);
+// The marketing site and API are public at this layer; every API route checks the role itself.
+// Only the app needs a session, except browsing the marketplace.
+const isApp = createRouteMatcher(["/app(.*)"]);
+const isPublicApp = createRouteMatcher(["/app/marketplace", "/app/marketplace/p/(.*)"]);
+const needsSession = (req: NextRequest) => isApp(req) && !isPublicApp(req);
 
 const clerkOn = !!process.env.CLERK_SECRET_KEY && !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-// Without Clerk keys the demo cookie gates pages; every API route still checks the role itself.
 function demoProxy(req: NextRequest) {
-  if (isPublic(req) || req.nextUrl.pathname.startsWith("/api/")) return NextResponse.next();
-  if (!req.cookies.get("demo_user")) {
+  if (needsSession(req) && !req.cookies.get("demo_user")) {
     const url = req.nextUrl.clone();
     url.pathname = "/sign-in";
     url.search = `?next=${encodeURIComponent(req.nextUrl.pathname)}`;
@@ -34,7 +21,7 @@ function demoProxy(req: NextRequest) {
 
 export default clerkOn
   ? clerkMiddleware(async (auth, req) => {
-      if (!isPublic(req)) await auth.protect();
+      if (needsSession(req)) await auth.protect();
     })
   : demoProxy;
 

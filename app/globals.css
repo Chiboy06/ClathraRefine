@@ -2,7 +2,7 @@
 
 /* One token set, two themes. Night is the pitch default. */
 :root,
-:root[data-theme="night"] {
+[data-theme="night"] {
   --canvas: #090e1a;
   --panel: #0d1527;
   --elev: #131e36;
@@ -33,7 +33,7 @@
   color-scheme: dark;
 }
 
-:root[data-theme="day"] {
+[data-theme="day"] {
   --canvas: #f1f5f9;
   --panel: #ffffff;
   --elev: #f8fafc;
@@ -105,6 +105,19 @@ body {
 .font-mono,
 .tabular {
   font-variant-numeric: tabular-nums;
+}
+
+::selection {
+  background: var(--primary-bg);
+  color: var(--fg);
+}
+html {
+  accent-color: var(--primary);
+  caret-color: var(--primary);
+  scrollbar-color: var(--line) transparent;
+}
+a {
+  text-underline-offset: 3px;
 }
 
 :focus-visible {

@@ -12,7 +12,7 @@ export async function prefs(page: Page, p: { theme?: "night" | "day"; mode?: "DE
 }
 
 export const ROUTES = [
-  "/", "/sign-in", "/sign-up", "/pricing", "/marketplace", "/marketplace/p/liquid-co2-food", "/marketplace/orders", "/marketplace/rfq", "/marketplace/seller",
-  "/onboarding", "/dashboard", "/measurements", "/departments", "/relays", "/alarms", "/audits", "/audit-history", "/support",
-  "/fleet", "/devices/ESP32S3-N16R8-HARNESS-01", "/events", "/audit-log", "/shift", "/reports", "/admin", "/welcome",
+  "/", "/sign-in", "/sign-up", "/pricing", "/app/marketplace", "/app/marketplace/p/liquid-co2-food", "/app/marketplace/orders", "/app/marketplace/rfq", "/app/marketplace/seller",
+  "/app/connect", "/app", "/app/measurements", "/app/departments", "/app/relays", "/app/alarms", "/app/audits", "/app/audit-history", "/app/support",
+  "/app/fleet", "/app/devices/ESP32S3-N16R8-HARNESS-01", "/app/events", "/app/audit-log", "/app/shift", "/app/reports", "/app/admin", "/app/organisation",
 ];
