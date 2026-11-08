@@ -1,9 +1,10 @@
 # ClathraRefine
 
-Industrial SCADA platform with a built-in B2B by-product marketplace. Prototype hardware: ESP32-S3 gas leak detection and liquid-solvent carbon capture skid. Energenius Squad, University of Abuja. NSChE hackathon, Port Harcourt, 9 to 11 November 2026.
+ClathraRefine is an intelligent industrial hazard prediction and gas leakage prevention system with carbon capture. The story runs in this order everywhere: **Predict** (models read live gas sensor data and forecast a hazard before it crosses an alarm threshold: a 30 s forecast and an anomaly score), **Prevent** (the edge controller acts locally in milliseconds, with or without the cloud: staged alarms with hysteresis, a latched trip, the siren, SCRAM, extraction and scrubbing), **Capture** (extracted gas passes through a liquid-solvent scrubber that captures CO2; the app tracks capture efficiency, solvent loading and captured mass), **Recover value** (captured CO2 and by-products are sold to other companies on the platform, with the production data behind every lot). For operators and safety managers at mini-refineries, gas processing plants, LPG depots, chemical plants and boiler houses.
 
 Read these before changing related code:
 - `docs/SCADA_BUILD_PROMPT.md`: the full build brief. Every page in it ships.
+- `docs/MODIFICATION_PROMPT.md`: the repositioning brief (marketing site, `/app` routes, prediction page). Route map in `docs/MODIFICATION_MAP.md`.
 - `docs/ClathraRefine-guide.md`: hardware, firmware, AWS, dashboard API, models, marketplace, run book.
 
 ## System

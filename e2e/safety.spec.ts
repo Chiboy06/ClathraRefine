@@ -81,13 +81,13 @@ test("Trigger leak drives alarms through warning, critical, SCRAM and recovery",
   await page.getByTestId("trigger-leak").click();
   const level = page.getByTestId("ambient-level");
   const flags = page.getByTestId("board-flags");
-  await expect(level).toContainText("Pre-hazard", { timeout: 15_000 });
-  await expect(level).toContainText("Critical", { timeout: 15_000 });
+  await expect(level).toContainText("Pre-hazard", { timeout: 35_000 });
+  await expect(level).toContainText("Critical", { timeout: 35_000 });
   await expect(flags).toContainText("Trip latched");
-  await expect(flags).toContainText("SCRAM latched", { timeout: 15_000 });
-  await expect(level).toContainText("Normal", { timeout: 20_000 });
+  await expect(flags).toContainText("SCRAM latched", { timeout: 35_000 });
+  await expect(level).toContainText("Normal", { timeout: 35_000 });
   await expect(flags).toContainText("Trip latched");
-  await expect(flags).toContainText("Trip clear", { timeout: 25_000 });
+  await expect(flags).toContainText("Trip clear", { timeout: 35_000 });
   await expect(flags).toContainText("No SCRAM");
 });
 

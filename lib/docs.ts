@@ -57,12 +57,12 @@ export const LIBRARY: Record<string, DocSpec> = {
   },
   ndir: {
     title: "NDIR Calibration Curves (template)",
-    subtitle: "For a future infrared CO2 analyser. The prototype's MQ-2 sensors do not measure CO2.",
+    subtitle: "For a future infrared CO2 analyser. The MQ-2 sensors fitted today do not measure CO2.",
     sections: [
       {
         heading: "Status",
         paragraphs: [
-          "No NDIR sensor is fitted to the prototype. All CO2 values in the platform are Simulated. This template records the calibration points to capture when an NDIR analyser (0 to 10,000 ppm range) is added.",
+          "No NDIR sensor is fitted yet. All CO2 values in the platform are Simulated. This template records the calibration points to capture when an NDIR analyser (0 to 10,000 ppm range) is added.",
         ],
       },
       {

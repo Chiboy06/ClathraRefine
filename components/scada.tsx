@@ -1,12 +1,11 @@
 "use client";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ArrowDownRight, ArrowRight, ArrowUpRight, X } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 import { cx } from "./ui";
 import type { Tag } from "@/lib/tags";
 import { lttb } from "@/lib/lttb";
 import { formatTime } from "@/lib/format";
-import type { Session } from "@/lib/server/auth";
 
 /** ISA-101 analogue indicator: value against range, normal band, alarm limits and trend direction. */
 export function AnalogueBar({ tag, value, trend, label }: { tag: Pick<Tag, "min" | "max" | "normal" | "lo" | "hi" | "hihi" | "unit">; value: number; trend?: number; label?: string }) {
@@ -122,34 +121,7 @@ export function Drawer({ open, onClose, title, children }: { open: boolean; onCl
   );
 }
 
-type Me = { session: Session | null; auth: "clerk" | "demo" | "none"; aws: boolean; paystack: boolean };
-let meState: Me | null = null;
-let meLoading: Promise<void> | null = null;
-const meSubs = new Set<() => void>();
-function loadMe(force = false) {
-  if (meLoading && !force) return;
-  meLoading = fetch("/api/me", { cache: "no-store" })
-    .then((r) => r.json())
-    .then((d: Me) => {
-      meState = d;
-      meSubs.forEach((f) => f());
-    })
-    .catch(() => {
-      meLoading = null;
-    });
-}
-const subscribeMe = (cb: () => void) => {
-  meSubs.add(cb);
-  loadMe();
-  return () => {
-    meSubs.delete(cb);
-  };
-};
-/** Current user and server capabilities, one shared request. Used only to show or hide controls; the server enforces. */
-export function useMe() {
-  const me = useSyncExternalStore(subscribeMe, () => meState, () => null);
-  return { me, loading: !me, reload: () => loadMe(true) };
-}
+export { useMe } from "./me";
 
 export function Mono({ children, className }: { children: ReactNode; className?: string }) {
   return <span className={cx("font-mono tabular", className)}>{children}</span>;

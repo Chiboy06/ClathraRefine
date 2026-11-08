@@ -21,7 +21,8 @@ export type Coll =
   | "user_roles"
   | "settings"
   | "ledger"
-  | "uploads";
+  | "uploads"
+  | "leads";
 
 export type Item = Record<string, unknown> & { id: string; created_at: number };
 

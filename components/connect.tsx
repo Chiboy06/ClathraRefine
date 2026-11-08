@@ -28,7 +28,7 @@ export function ConnectDevice({ embedded = false }: { embedded?: boolean }) {
   const { me } = useMe();
   const mode = usePrefs((s) => s.mode);
   const p = usePlant();
-  const [f, setF] = useState({ facility: "Niger Delta Mini-Refinery Complex #04", station: "ATMO-REF-NG-9842", region: "eu-west-1", endpoint: "", thing: "ESP32S3-N16R8-HARNESS-01", topic: "clathrarefine/ESP32S3-N16R8-HARNESS-01/telemetry" });
+  const [f, setF] = useState({ facility: "Niger Delta Mini-Refinery Complex #04", station: "CLR-REF-NG-9842", region: "eu-west-1", endpoint: "", thing: "ESP32S3-N16R8-HARNESS-01", topic: "clathrarefine/ESP32S3-N16R8-HARNESS-01/telemetry" });
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; t: string } | null>(null);
   const [deviceLines, setDeviceLines] = useState<Line[]>([]);
   const [local, setLocal] = useState<Line[]>([]);

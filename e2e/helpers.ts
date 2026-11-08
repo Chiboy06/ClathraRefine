@@ -11,8 +11,14 @@ export async function prefs(page: Page, p: { theme?: "night" | "day"; mode?: "DE
   }, p);
 }
 
+export const SITE_ROUTES = [
+  "/", "/product/prediction", "/product/prevention", "/product/capture", "/product/marketplace",
+  "/solutions/mini-refineries", "/solutions/gas-processing", "/solutions/lpg-depots", "/solutions/chemical-plants", "/solutions/boiler-houses",
+  "/pricing", "/security", "/company", "/contact", "/resources", "/sign-in", "/sign-up",
+];
+
 export const ROUTES = [
-  "/", "/sign-in", "/sign-up", "/pricing", "/app/marketplace", "/app/marketplace/p/liquid-co2-food", "/app/marketplace/orders", "/app/marketplace/rfq", "/app/marketplace/seller",
+  ...SITE_ROUTES, "/app/predict", "/app/capture", "/app/get-started", "/app/marketplace", "/app/marketplace/p/liquid-co2-food", "/app/marketplace/orders", "/app/marketplace/rfq", "/app/marketplace/seller",
   "/app/connect", "/app", "/app/measurements", "/app/departments", "/app/relays", "/app/alarms", "/app/audits", "/app/audit-history", "/app/support",
   "/app/fleet", "/app/devices/ESP32S3-N16R8-HARNESS-01", "/app/events", "/app/audit-log", "/app/shift", "/app/reports", "/app/admin", "/app/organisation",
 ];

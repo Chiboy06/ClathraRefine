@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* One token set, two themes. Night is the pitch default. */
+/* One token set, two themes. Night is the app default; the marketing site is Day. */
 :root,
 [data-theme="night"] {
   --canvas: #090e1a;

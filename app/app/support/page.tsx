@@ -47,7 +47,7 @@ export default function Support() {
     <Page title="24/7 field support and chemical emergency desk">
       <div role="alert" className="flex flex-col gap-2 rounded-lg border border-crit bg-crit px-6 py-4 text-white md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-3 font-semibold">
-          <Phone aria-hidden className="h-5 w-5" /> 24/7 hotline: <span className="font-mono">+234 800-ATMO-VALOR</span>
+          <Phone aria-hidden className="h-5 w-5" /> 24/7 hotline: <span className="font-mono">+234 800 CLATHRA</span>
           <span className="rounded bg-white px-1.5 text-[10px] font-semibold uppercase text-red-700">Demo number</span>
         </div>
         <div className="text-sm">Rapid dispatch SLA: &lt; 8 seconds to acknowledge (target)</div>
@@ -118,7 +118,7 @@ export default function Support() {
               </li>
             ))}
           </ul>
-          <p className="mt-4 text-xs text-muted">Generated as PDFs from the build guide. The NDIR sheet is a template: no NDIR sensor is fitted to the prototype.</p>
+          <p className="mt-4 text-xs text-muted">Generated as PDFs from the build guide. The NDIR sheet is a template: no NDIR sensor is fitted to the current hardware.</p>
         </Card>
       </div>
     </Page>

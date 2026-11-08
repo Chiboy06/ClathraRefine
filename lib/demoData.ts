@@ -8,13 +8,13 @@ export const DEMO_USERS: { id: string; name: string; email: string; role: Role }
   { id: "demo-supervisor-2", name: "Ibrahim Musa", email: "supervisor2@demo.clathrarefine.test", role: "supervisor" },
   { id: "demo-auditor", name: "Dr. Amina Bello", email: "auditor@demo.clathrarefine.test", role: "auditor" },
   { id: "demo-buyer", name: "Funke Adeyemi", email: "buyer@demo.clathrarefine.test", role: "buyer" },
-  { id: "demo-seller", name: "Energenius Skid Ltd", email: "seller@demo.clathrarefine.test", role: "seller" },
+  { id: "demo-seller", name: "Demo Seller Ltd", email: "seller@demo.clathrarefine.test", role: "seller" },
   { id: "demo-admin", name: "Platform Admin", email: "admin@demo.clathrarefine.test", role: "admin" },
 ];
 
 export const FACILITY = {
   name: "Niger Delta Mini-Refinery Complex #04",
-  station: "ATMO-REF-NG-9842",
+  station: "CLR-REF-NG-9842",
   location: "Port Harcourt, Rivers State",
   shift: "Shift Alpha • Engr. T. Balogun",
 };
@@ -49,7 +49,7 @@ export const DEPARTMENTS = [
 export const QUOTA = { monthlyMt: 2500, consumedPct: 56.8, surplusMt: 1080 };
 
 export const SITES = [
-  { id: "skid", name: "ClathraRefine bench skid (University of Abuja)", thing: "ESP32S3-N16R8-HARNESS-01", real: true, region: "eu-west-1" },
+  { id: "skid", name: "ClathraRefine bench skid", thing: "ESP32S3-N16R8-HARNESS-01", real: true, region: "eu-west-1" },
   { id: "demo-a", name: "Demo Site Alpha (fictional)", thing: "DEMO-ALPHA-01", real: false, region: "eu-west-1" },
   { id: "demo-b", name: "Demo Site Bravo (fictional)", thing: "DEMO-BRAVO-01", real: false, region: "eu-west-1" },
   { id: "demo-c", name: "Demo Site Charlie (fictional)", thing: "DEMO-CHARLIE-01", real: false, region: "eu-west-1" },
@@ -98,7 +98,7 @@ export const PRODUCTS: Product[] = [
     id: "liquid-co2-food",
     created_at: T0,
     seller_id: "demo-seller",
-    seller_name: "Energenius Skid Ltd",
+    seller_name: "Demo Seller Ltd",
     title: "Liquid CO2, food and beverage grade, 99.98% purity",
     category: "Liquid CO2 (Food/Cryo)",
     packaging: [
@@ -130,7 +130,7 @@ export const PRODUCTS: Product[] = [
     id: "biomethane-cng",
     created_at: T0 + 1,
     seller_id: "demo-seller",
-    seller_name: "Energenius Skid Ltd",
+    seller_name: "Demo Seller Ltd",
     title: "Upgraded biomethane / scrubber-derived CNG, 98.5% CH4",
     category: "Scrubbed Biomethane (Bio-CNG)",
     packaging: [{ id: "cascade250", label: "250 m3 cascade skid", price_kobo: 32_000_000, moq: 1 }],
@@ -158,7 +158,7 @@ export const PRODUCTS: Product[] = [
     id: "carbon-token",
     created_at: T0 + 2,
     seller_id: "demo-seller",
-    seller_name: "Energenius Skid Ltd",
+    seller_name: "Demo Seller Ltd",
     title: "Carbon offset tokens, 1 MT CO2e sequestration",
     category: "Carbon Offsets (VCS)",
     packaging: [{ id: "token1t", label: "Metric-ton token", price_kobo: 3_550_000, moq: 1, mt_per_unit: 1 }],
@@ -179,7 +179,7 @@ export const PRODUCTS: Product[] = [
     id: "sodium-carbonate",
     created_at: T0 + 3,
     seller_id: "demo-seller",
-    seller_name: "Energenius Skid Ltd",
+    seller_name: "Demo Seller Ltd",
     title: "Sodium carbonate solution, recovered",
     category: "Recovered Chemicals",
     packaging: [{ id: "litre", label: "Per litre", price_kobo: 250_000, moq: 20 }],
@@ -193,7 +193,7 @@ export const PRODUCTS: Product[] = [
     alt: "Illustration of sealed HDPE drums of sodium carbonate solution",
     status: "live",
     demo: true,
-    lot: { lot_id: "LOT-NAC-2026-1105", site: "ClathraRefine bench skid (University of Abuja)", period: "5 Nov 2026", tag: "LT-401" },
+    lot: { lot_id: "LOT-NAC-2026-1105", site: "ClathraRefine bench skid", period: "5 Nov 2026", tag: "LT-401" },
     coa: [
       { label: "Sodium carbonate", value: "1.3 g/L" },
       { label: "Residual NaOH", value: "< 0.05 g/L" },

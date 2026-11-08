@@ -1,24 +1,21 @@
 import { Suspense } from "react";
-import { PublicHeader } from "@/components/publicNav";
 import { ClerkSignIn, DemoQuickLogin } from "@/components/authPanels";
 import { clerkEnabled, demoAuthEnabled } from "@/lib/server/auth";
 import { DEMO_USERS } from "@/lib/demoData";
 import { Notice } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "Sign in" };
+export const metadata = { title: "Sign in", robots: { index: false } };
 
 export default function SignInPage() {
   return (
-    <>
-      <PublicHeader />
-      <main id="main" className="mx-auto flex max-w-3xl flex-col items-center gap-8 p-6 md:p-10">
-        <h1 className="text-2xl font-bold">Sign in to ClathraRefine</h1>
+    <div className="mx-auto flex max-w-3xl flex-col items-center gap-8 px-6 py-16 md:py-24">
+        <h1 className="text-center text-[2rem] font-semibold tracking-[-0.02em]">Sign in to ClathraRefine</h1>
         {clerkEnabled() ? (
           <>
             <ClerkSignIn />
             <div className="w-full rounded-lg border border-line bg-panel p-6 text-sm">
-              <h2 className="mb-2 font-semibold">Demo accounts for the pitch</h2>
+              <h2 className="mb-2 font-semibold">Demo accounts</h2>
               <p className="mb-2 text-muted">Passwords are held in Clerk, not in this app.</p>
               <ul className="grid grid-cols-1 gap-1 font-mono text-xs sm:grid-cols-2">
                 {DEMO_USERS.map((u) => (
@@ -40,7 +37,6 @@ export default function SignInPage() {
         ) : (
           <Notice tone="warn">Sign-in is not configured. Set the Clerk keys, or DEMO_AUTH=true for a local demo.</Notice>
         )}
-      </main>
-    </>
+    </div>
   );
 }
