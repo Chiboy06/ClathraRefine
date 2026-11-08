@@ -91,7 +91,7 @@ test("contact form stores a demo request", async ({ page }) => {
   await page.goto("/contact");
   await page.getByLabel("Your name").fill("Ada Obi");
   await page.getByLabel("Work email").fill("ada@example.com");
-  await page.getByLabel("Company").fill("Example Gas Ltd");
+  await page.getByRole("textbox", { name: "Company" }).fill("Example Gas Ltd");
   await page.getByRole("button", { name: "Book a demo" }).last().click();
   await expect(page.getByText("Your request is in")).toBeVisible();
 });

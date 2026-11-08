@@ -247,7 +247,7 @@ export function Segmented<T extends string>({ value, options, onChange, label }:
 /** Table wrapper: zebra rows, comfortable padding, scrolls on mobile only. */
 export function Table({ head, children, caption }: { head: ReactNode[]; children: ReactNode; caption?: string }) {
   return (
-    <div className="overflow-x-auto lg:overflow-x-visible">
+    <div className="relative overflow-x-auto lg:overflow-x-visible">
       <table className="w-full text-left text-sm">
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead className="border-b border-line text-xs uppercase tracking-wide text-muted">
