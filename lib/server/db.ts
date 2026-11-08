@@ -1,10 +1,12 @@
 import "server-only";
 import { GetCommand, PutCommand, QueryCommand, ScanCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { aws, awsEnabled } from "./aws";
+import { aws, awsEnabled as dynamoEnabled } from "./aws";
+import { ConvexHttpClient } from "convex/browser";
+import { api } from "../../convex/_generated/api";
 import { seedFor } from "../demoData";
 
-// One small store interface over DynamoDB (production) or an in-memory map (local demo and tests).
-// Commands/overrides, products and orders use the guide's tables; everything else shares ClathraRecords (pk, sk).
+// One small store interface over Convex (production), DynamoDB (kept for reference) or an in-memory map (local demo and tests).
+// Convex: every collection lives in the `records` table; conditional updates run in one Convex transaction.
 
 export type Coll =
   | "commands"
@@ -32,6 +34,15 @@ const MAPPED: Partial<Record<Coll, { table: string; key: string }>> = {
   orders: { table: "ClathraOrders", key: "order_id" },
 };
 const RECORDS = "ClathraRecords";
+
+const convexUrl = process.env.CONVEX_URL; // server-only, so tests can switch it off at runtime
+const serverKey = process.env.CONVEX_SERVER_KEY;
+const convexOn = () => !!convexUrl && !!serverKey;
+let cx: ConvexHttpClient | null = null;
+const convex = () => (cx ??= new ConvexHttpClient(convexUrl!));
+// Convex values cannot hold undefined; drop those keys like JSON does.
+const plain = <T,>(v: T): T => JSON.parse(JSON.stringify(v));
+const awsEnabled = () => !convexOn() && dynamoEnabled();
 
 /** Sortable id: time first so newest-first listing is a plain reverse sort. */
 export const newId = (now = Date.now()) => `${now.toString().padStart(15, "0")}#${crypto.randomUUID().slice(0, 8)}`;
@@ -65,6 +76,10 @@ function checkConds(item: Item | undefined, conds: Cond[]) {
 
 // ---------------- API ----------------
 export async function put(coll: Coll, item: Item) {
+  if (convexOn()) {
+    await convex().mutation(api.records.put, { serverKey: serverKey!, coll, key: item.id, created_at: item.created_at ?? Date.now(), data: plain(item) });
+    return item;
+  }
   if (!awsEnabled()) {
     mem(coll).set(item.id, structuredClone(item));
     return item;
@@ -79,6 +94,7 @@ export async function put(coll: Coll, item: Item) {
 }
 
 export async function get<T = Item>(coll: Coll, id: string): Promise<T | undefined> {
+  if (convexOn()) return ((await convex().query(api.records.get, { serverKey: serverKey!, coll, key: id })) ?? undefined) as T | undefined;
   if (!awsEnabled()) return structuredClone(mem(coll).get(id)) as T | undefined;
   const m = MAPPED[coll];
   const out = await aws().ddb.send(
@@ -89,6 +105,7 @@ export async function get<T = Item>(coll: Coll, id: string): Promise<T | undefin
 
 /** Newest first. */
 export async function list<T = Item>(coll: Coll, limit = 200): Promise<T[]> {
+  if (convexOn()) return (await convex().query(api.records.list, { serverKey: serverKey!, coll, limit })) as T[];
   if (!awsEnabled()) {
     return [...mem(coll).values()].sort((a, b) => (a.id < b.id ? 1 : -1)).slice(0, limit).map((i) => structuredClone(i)) as T[];
   }
@@ -112,6 +129,15 @@ export async function list<T = Item>(coll: Coll, limit = 200): Promise<T[]> {
 
 /** Conditional update. Returns false when the condition fails, so callers can refuse cleanly. */
 export async function update(coll: Coll, id: string, patch: Record<string, unknown>, conds: Cond[] = []): Promise<boolean> {
+  if (convexOn()) {
+    return convex().mutation(api.records.update, {
+      serverKey: serverKey!,
+      coll,
+      key: id,
+      patch: plain(patch),
+      conds: conds.map((c) => ({ field: c.field, eq: c.eq, ne: c.ne, gte: c.gte, hasEq: "eq" in c, hasNe: "ne" in c })),
+    });
+  }
   if (!awsEnabled()) {
     const m = mem(coll);
     const cur = m.get(id);

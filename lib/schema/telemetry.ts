@@ -21,8 +21,16 @@ export const TelemetryRow = z.object({
   buffered: z.boolean(),
   fw: z.string(),
   ingest_ms: z.coerce.number().optional(),
+  // rev C firmware and optional sensors
+  mode: z.enum(["AUTO", "MANUAL"]).optional(),
+  co2_in_mv: z.coerce.number().optional(),
+  co2_out_mv: z.coerce.number().optional(),
+  gas_lpm: z.coerce.number().optional(),
+  liquid_lpm: z.coerce.number().optional(),
+  solvent_c: z.coerce.number().optional(),
+  ph: z.coerce.number().optional(),
 });
 export type TelemetryRow = z.infer<typeof TelemetryRow>;
 
 /** Command acknowledgement published on cmd/ack and stored by the AckToStore rule. */
-export const AckRow = z.object({ cmd: z.string(), accepted: z.boolean(), uptime_ms: z.coerce.number(), ingest_ms: z.coerce.number() });
+export const AckRow = z.object({ cmd: z.string(), accepted: z.boolean(), reason: z.string().optional(), uptime_ms: z.coerce.number().optional(), ingest_ms: z.coerce.number() });

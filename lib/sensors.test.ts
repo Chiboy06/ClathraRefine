@@ -142,3 +142,37 @@ describe("board interlocks", () => {
     expect(b.mode).toBe("AUTO");
   });
 });
+
+import { classify, deriveTelemetry, isAwsEnableUrl, keyMatches, IngestTelemetry } from "./ingest";
+
+describe("ingest", () => {
+  const row = IngestTelemetry.parse({
+    thing: "T1", ts: 1, uptime_ms: 250000, exhaust_mv: 3600, ambient_mv: 480, ambient_level: "NORMAL", scrubber: "SCRUBBING", relay_mask: 11,
+    trip_latched: false, siren_silenced: false, warming_up: false, scram: false, sensor_fault: false, buffered: false, fw: "rev-C", co2_in_mv: 1880, co2_out_mv: 980, gas_lpm: 1,
+  });
+  it("classifies confirmation, ack, event and telemetry", () => {
+    expect(classify({ confirmationToken: "x", enableUrl: "https://iot.eu-west-1.amazonaws.com/confirmdestination/abc" })).toBe("confirm");
+    expect(classify({ cmd: "ping", accepted: true })).toBe("ack");
+    expect(classify({ topic: "clathrarefine/T1/events" })).toBe("event");
+    expect(classify({ topic: "clathrarefine/T1/telemetry" })).toBe("telemetry");
+  });
+  it("only fetches AWS confirmation URLs", () => {
+    expect(isAwsEnableUrl("https://iot.eu-west-1.amazonaws.com/confirmdestination/abc")).toBe(true);
+    expect(isAwsEnableUrl("https://evil.example.com/confirmdestination/abc")).toBe(false);
+  });
+  it("checks the key exactly", () => {
+    expect(keyMatches("abc", "abc")).toBe(true);
+    expect(keyMatches("abd", "abc")).toBe(false);
+    expect(keyMatches(null, "abc")).toBe(false);
+    expect(keyMatches("abc", undefined)).toBe(false);
+  });
+  it("derives CO2, reduction, capture and quality", () => {
+    const d = deriveTelemetry(row, 1000);
+    expect(d.device).toBe("T1");
+    expect(d.co2_in_ppm).toBeGreaterThan(d.co2_out_ppm!);
+    expect(d.reduction_pct).toBeGreaterThan(85);
+    expect(d.capture_g_min).toBeGreaterThan(0);
+    expect(d.quality).toBe("Good");
+    expect(deriveTelemetry({ ...row, sensor_fault: true }, 1000).quality).toBe("Bad");
+  });
+});

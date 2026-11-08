@@ -25,13 +25,16 @@ export function aws() {
   return clients;
 }
 
-/** The firmware accepts only these two commands. Nothing else may be published. */
-export async function publishCmd(cmd: "scram" | "ping") {
+export type BoardCommand = { cmd: "scram" } | { cmd: "ping" } | { cmd: "mode"; value: "manual" | "auto" } | { cmd: "fan" | "pump"; value: "on" | "off" };
+
+/** The firmware accepts only these commands and applies its own interlocks to mode, fan and pump. */
+export async function publishCmd(c: BoardCommand | "scram" | "ping") {
+  const payload = typeof c === "string" ? { cmd: c } : c;
   await aws().iot.send(
     new PublishCommand({
       topic: `clathrarefine/${THING}/cmd`,
       qos: 1,
-      payload: new TextEncoder().encode(JSON.stringify({ cmd })),
+      payload: new TextEncoder().encode(JSON.stringify(payload)),
     }),
   );
 }

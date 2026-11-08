@@ -8,6 +8,7 @@ import { PLANT } from "../demoData";
 import { relayOn } from "../fsm";
 import { STALE_MS } from "../quality";
 import { riskIndex, risePerSecond, sessionAnomalyZ } from "../predict";
+import type { Command } from "../fsm";
 
 export type Severity = "INFO" | "WARNING" | "CRITICAL" | "PASS" | "AUDIT";
 export type HubEvent = { id: string; at: number; severity: Severity; source: "board" | "app" | "demo"; tag: string; message: string };
@@ -49,8 +50,13 @@ export type Snapshot = {
   plant: Plant;
   leakActive: boolean;
   riskHistory: { t: number; risk: number }[];
+  acks: Ack[];
+  gasSource: boolean;
+  solventLoadingPct: number;
   now: number;
 };
+
+export type Ack = { cmd: string; value?: string; accepted: boolean; reason?: string; at: number };
 
 const ALARM_DEFS: { id: string; tag: string; priority: Priority; message: string; location: string }[] = [
   { id: "ALM-AT101-HIHI", tag: "AT-101", priority: "critical", message: "Ambient gas critical: trip latched", location: "Ambient sensor (GPIO 2)" },
@@ -144,6 +150,9 @@ class Hub {
       plant: plantAt(now, true),
       leakActive: false,
       riskHistory: [],
+      acks: [],
+      gasSource: true,
+      solventLoadingPct: 0,
       now,
     };
   }
@@ -189,6 +198,8 @@ class Hub {
       plant: plantAt(now, !last || last.scrubber === "SCRUBBING" || this.snap.mode === "LIVE"),
       leakActive: this.scenario.leakActive,
       riskHistory: last ? [...this.snap.riskHistory, { t: now, risk: this.riskNow() }].slice(-120) : this.snap.riskHistory,
+      gasSource: this.scenario.gasSource,
+      solventLoadingPct: this.scenario.loadingPct,
     });
   };
 
@@ -291,6 +302,24 @@ class Hub {
   demoForecast(seconds = 30) {
     return this.snap.mode === "DEMO" ? this.scenario.lookAhead(seconds) : [];
   }
+  /** DEMO: the scenario board applies its own interlocks and answers like cmd/ack, a moment later. */
+  commandDemo(c: Command) {
+    const r = this.scenario.command(c);
+    setTimeout(() => this.addAck({ cmd: c.cmd, value: c.value, accepted: r.accepted, reason: r.reason, at: Date.now() }), 300);
+  }
+  /** LIVE acks arrive from Convex (cmd/ack through the ingest rule). */
+  addAck(a: Ack) {
+    this.set({ acks: [a, ...this.snap.acks].slice(0, 50) });
+    this.addEvent({ severity: a.accepted ? "INFO" : "WARNING", source: this.snap.mode === "DEMO" ? "demo" : "board", tag: a.cmd === "fan" ? "XV-201" : a.cmd === "pump" ? "P-202" : "HS-001", message: a.accepted ? `Board accepted ${a.cmd} ${a.value ?? ""}`.trim() : `Board rejected ${a.cmd} ${a.value ?? ""}: ${a.reason}` });
+  }
+  setGasSource(on: boolean) {
+    this.scenario.setGasSource(on);
+    this.set({ gasSource: on });
+  }
+  replaceSolvent() {
+    this.scenario.replaceSolvent();
+    this.addEvent({ severity: "PASS", source: "demo", tag: "LT-401", message: "Solvent replaced (Demo)" });
+  }
   triggerLeak() {
     if (this.snap.mode !== "DEMO") return;
     this.scenario.triggerLeak();
@@ -341,5 +370,8 @@ export const EMPTY_SNAP: Snapshot = {
   plant: plantAt(0, true),
   leakActive: false,
   riskHistory: [],
+  acks: [],
+  gasSource: true,
+  solventLoadingPct: 0,
   now: 0,
 };

@@ -22,6 +22,8 @@ export default defineConfig({
       CLERK_SECRET_KEY: "",
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "",
       AWS_ROLE_ARN: "",
+      CONVEX_URL: "",
+      CONVEX_SERVER_KEY: "",
       PAYSTACK_SECRET_KEY: process.env.PAYSTACK_SECRET_KEY ?? "",
     },
   },

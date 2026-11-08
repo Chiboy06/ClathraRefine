@@ -1,12 +1,15 @@
 import type { Sample, SourceStatus, TelemetrySource } from "./types";
 import { TelemetryRow } from "../schema/telemetry";
-import { initialBoard, stepBoard, type BoardState } from "../fsm";
-import { adcToMv } from "../process";
+import { boardCommand, initialBoard, relayOn, stepBoard, type BoardState, type Command } from "../fsm";
+import { adcToMv, captureGPerMin, solventCapacityGPerL } from "../process";
+import { mvForPpm } from "../mq135";
 import { PLANT } from "../demoData";
 
 const TICK_MS = 2000;
 
-export function toSample(b: BoardState, i: { uptimeMs: number; exhaustMv: number; ambientMv: number; ts: number; thing?: string; buffered?: boolean }): Sample {
+type Extra = { co2InMv?: number; co2OutMv?: number; gasLpm?: number; liquidLpm?: number; solventC?: number; ph?: number };
+
+export function toSample(b: BoardState, i: { uptimeMs: number; exhaustMv: number; ambientMv: number; ts: number; thing?: string; buffered?: boolean } & Extra): Sample {
   return {
     thing: i.thing ?? "ESP32S3-N16R8-HARNESS-01",
     ts: i.ts,
@@ -22,7 +25,10 @@ export function toSample(b: BoardState, i: { uptimeMs: number; exhaustMv: number
     scram: b.scram,
     sensor_fault: b.sensorFault,
     buffered: !!i.buffered,
-    fw: "rev-B (sim)",
+    fw: "rev-C (sim)",
+    mode: b.mode,
+    ...(i.co2InMv !== undefined && { co2_in_mv: i.co2InMv, co2_out_mv: i.co2OutMv }),
+    ...(i.gasLpm !== undefined && { gas_lpm: i.gasLpm, liquid_lpm: i.liquidLpm, solvent_c: i.solventC, ph: i.ph }),
     receivedAt: Date.now(),
     check_sensor: i.exhaustMv < 100 || i.ambientMv < 100,
   };
@@ -32,8 +38,9 @@ export function toSample(b: BoardState, i: { uptimeMs: number; exhaustMv: number
 const wobble = (t: number, a: number, p: number) => a * Math.sin(t / p) + (a / 3) * Math.sin(t / (p * 0.37));
 
 /**
- * DEMO: runs the firmware port on a generated signal. The exhaust sits above the scrubber threshold
- * (the plant is processing flue gas); the ambient sits at the 410 ADC baseline until "Trigger leak".
+ * DEMO: runs the firmware port on a generated signal. While the flue gas source is on the exhaust sits above the
+ * scrubber threshold, so the skid scrubs CO2; the ambient sits at the 410 ADC baseline until "Trigger leak".
+ * The solvent loads as it captures, so breakthrough (outlet/inlet) rises and the solvent forecast has something to fit.
  */
 export class ScenarioSource implements TelemetrySource {
   readonly kind = "scenario" as const;
@@ -43,6 +50,25 @@ export class ScenarioSource implements TelemetrySource {
   private leakAt: number | null = null;
   private pending: { scram?: boolean; ack?: boolean } = {};
   private t = 0;
+  gasSource = true;
+  private solventL = 2;
+  private loadedG = 0.35 * solventCapacityGPerL() * 2; // start part-loaded so saturation is visible within the hour
+
+  get loadingPct() {
+    return (this.loadedG / (solventCapacityGPerL() * this.solventL)) * 100;
+  }
+  setGasSource(on: boolean) {
+    this.gasSource = on;
+  }
+  replaceSolvent() {
+    this.loadedG = 0;
+  }
+  /** Manual command through the board's own interlocks (DEMO). */
+  command(c: Command): { accepted: boolean; reason?: string } {
+    const r = boardCommand(this.board, c, this.uptime);
+    this.board = r.state;
+    return { accepted: r.accepted, reason: r.reason };
+  }
 
   triggerLeak() {
     this.leakAt = this.uptime;
@@ -82,7 +108,7 @@ export class ScenarioSource implements TelemetrySource {
   private tick() {
     this.uptime += TICK_MS;
     this.t += 1;
-    const exhaustMv = Math.round(adcToMv(PLANT.inletAdc) + wobble(this.t, 60, 9));
+    const exhaustMv = Math.round(this.gasSource ? adcToMv(PLANT.inletAdc) + wobble(this.t, 60, 9) : 880 + wobble(this.t, 15, 9));
     const ambientMv = Math.round(this.ambientAt());
     const leakS = this.leakAt === null ? -1 : (this.uptime - this.leakAt) / 1000;
     // The scripted operator presses SCRAM during the critical phase, and ACK twice later (silence, then reset).
@@ -92,7 +118,30 @@ export class ScenarioSource implements TelemetrySource {
     if (leakS >= 56) this.leakAt = null;
     this.board = stepBoard(this.board, { uptimeMs: this.uptime, exhaustMv, ambientMv, scramRequest: this.pending.scram, ackPressed: this.pending.ack });
     this.pending = {};
-    this.emit?.(toSample(this.board, { uptimeMs: this.uptime, exhaustMv, ambientMv, ts: Date.now() }));
+
+    // Bench capture: inlet CO2 from the source, outlet from the solvent's breakthrough curve.
+    const fan = relayOn(this.board.relayMask, 1);
+    const pump = relayOn(this.board.relayMask, 2);
+    const inPpm = this.gasSource ? 8000 + wobble(this.t, 250, 23) : 450 + wobble(this.t, 10, 23);
+    const load = this.loadingPct / 100;
+    const ratio = fan && pump ? 0.08 + 0.92 / (1 + Math.exp(-(load - 0.8) * 10)) : 0.97;
+    const outPpm = inPpm * ratio;
+    const gasLpm = fan ? 1.0 + wobble(this.t, 0.03, 5) : 0;
+    if (fan && pump) this.loadedG = Math.min(solventCapacityGPerL() * this.solventL * 1.6, this.loadedG + captureGPerMin(gasLpm, inPpm, outPpm) * (TICK_MS / 60_000));
+    this.emit?.(
+      toSample(this.board, {
+        uptimeMs: this.uptime,
+        exhaustMv,
+        ambientMv,
+        ts: Date.now(),
+        co2InMv: mvForPpm(inPpm),
+        co2OutMv: mvForPpm(outPpm),
+        gasLpm: +gasLpm.toFixed(2),
+        liquidLpm: pump ? +(0.4 + wobble(this.t, 0.01, 7)).toFixed(2) : 0,
+        solventC: +(27 + wobble(this.t, 0.4, 41) + (pump ? 1.2 : 0)).toFixed(1),
+        ph: +Math.max(8.2, 12.4 - 2.2 * load).toFixed(2),
+      }),
+    );
   }
 
   private emit?: (s: Sample) => void;
