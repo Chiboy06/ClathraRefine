@@ -51,7 +51,9 @@ Three wiring changes and one added button. Every other connection stays as in re
 | --- | --- | --- | --- |
 | GPIO1 | MQ-2 "exhaust" analogue output | ADC1 input | Divider now 10 kΩ (top) and 15 kΩ (bottom) |
 | GPIO2 | MQ-2 "ambient" analogue output | ADC1 input | Same divider change |
-| GPIO4 | Acknowledge push button to GND | Digital input, internal pull-up | New |
+| GPIO4 | MQ-135 inlet CO2 analogue output (ADC1_CH3) | ADC1 input, 10k/15k divider | Rev C: new |
+| GPIO5 | MQ-135 outlet CO2 analogue output (ADC1_CH4) | ADC1 input, 10k/15k divider | Rev C: new |
+| GPIO12 | Acknowledge push button to GND | Digital input, internal pull-up | Rev C: moved from GPIO4 |
 | GPIO6 | Relay 1, extraction fan | Digital output, active LOW | None |
 | GPIO7 | Relay 2, solvent pump | Digital output, active LOW | None |
 | GPIO8 | Relay 3, red lamp | Digital output, active LOW | None |
@@ -59,7 +61,7 @@ Three wiring changes and one added button. Every other connection stays as in re
 | GPIO10 | Relay 5, yellow lamp | Digital output, active LOW | None |
 | GPIO11 | Relay 6, siren | Digital output, active LOW | None |
 
-All pins avoid the octal PSRAM lines (GPIO35 to 37), the strapping pins (GPIO0, 3, 45, 46) and the USB pins (GPIO19, 20) ([atomic14 module notes](https://www.atomic14.com/esp32/modules/esp32-s3-wroom-1/)). GPIO1, 2 and 4 are ADC1 pins, which keep working while Wi-Fi is on.
+All pins avoid the octal PSRAM lines (GPIO35 to 37), the strapping pins (GPIO0, 3, 45, 46) and the USB pins (GPIO19, 20) ([atomic14 module notes](https://www.atomic14.com/esp32/modules/esp32-s3-wroom-1/)). GPIO1, 2, 4 and 5 are ADC1 pins, which keep working while Wi-Fi is on. Do not use GPIO3 (strapping pin) or any ADC2 pin (unreliable with Wi-Fi on).
 
 ### Divider
 
@@ -90,6 +92,18 @@ Four tasks run on the board. Three safety tasks share core 1 and never wait for 
 | SensorAcquisition | 1 | 3 | Reads both MQ-2 sensors every 100 ms, 16 samples averaged |
 | ExhaustControl | 1 | 2 | Fan and pump sequence: 2 s stagger, 5 s purge |
 | Network | 0 | 1 | Wi-Fi, MQTT over TLS to AWS, telemetry every 2 s, offline buffer, SCRAM commands |
+
+### Revision C: manual commands and MQ-135 inputs
+
+The sketch now lives in `firmware/ClathraRefine/ClathraRefine.ino` (revision C). It extends the listing below:
+
+- **New commands** on the existing `cmd` topic, so the AWS IoT policy is unchanged: `{"cmd":"mode","value":"manual"|"auto"}`, `{"cmd":"fan","value":"on"|"off"}`, `{"cmd":"pump","value":"on"|"off"}`.
+- **Interlocks on the board.** The board refuses an unsafe command and says why on `cmd/ack` (`"accepted":false,"reason":"..."`):
+  - manual commands only in manual mode; manual mode is refused while tripped, in SCRAM, warming up or with exhaust gas active;
+  - fan on always allowed; fan off refused while exhaust gas is active, tripped, in SCRAM or with the pump running;
+  - pump on needs the fan on and no trip; pump off always allowed;
+  - automatic safety always wins: exhaust gas, a critical ambient level, a sensor fault, a trip or SCRAM returns the board to automatic at once; manual mode also returns to automatic after 10 minutes without a command.
+- **New telemetry fields:** `mode` (`AUTO`/`MANUAL`), `co2_in_mv`, `co2_out_mv` (sensor-side millivolts from the two MQ-135 sensors). The app converts them to ppm with each sensor's R0 calibration.
 
 ### Board settings (Arduino IDE)
 
