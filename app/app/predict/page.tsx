@@ -43,15 +43,8 @@ export default function Predict() {
   const warnIn = forecastCrossing(forecast, FW.AMB_WARN_ON_MV, p.now, l?.ambient_mv);
   const critIn = forecastCrossing(forecast, FW.AMB_CRIT_ON_MV, p.now, l?.ambient_mv);
 
-  // Risk trend from readings and rate of rise over the last 2 minutes.
-  const trend = useMemo(
-    () =>
-      samples.slice(-60).map((s, i, arr) => ({
-        t: s.t,
-        risk: riskIndex({ mv: s.v, risePerS: risePerSecond(arr.slice(Math.max(0, i - 5), i + 1), 10) }),
-      })),
-    [samples],
-  );
+  // Risk trend: the same index, recorded each second by the hub.
+  const trend = p.riskHistory;
 
   // Anomalies: rising edges above the threshold against the session baseline.
   const anomalies = useMemo(() => {
@@ -172,8 +165,8 @@ export default function Predict() {
                       <ReferenceLine y={FW.AMB_WARN_ON_MV} stroke="var(--warn)" strokeDasharray="4 4" label={{ value: "Warning 1,410 mV", fill: "var(--warn-fg)", fontSize: 10, position: "insideTopLeft" }} />
                       <ReferenceLine y={FW.AMB_CRIT_ON_MV} stroke="var(--crit)" strokeDasharray="4 4" label={{ value: "Trip 2,710 mV", fill: "var(--crit-fg)", fontSize: 10, position: "insideTopLeft" }} />
                       <ReferenceLine x={p.now} stroke="var(--muted)" label={{ value: "Now", fill: "var(--muted)", fontSize: 10, position: "insideTop" }} />
-                      {warnIn ? <ReferenceLine x={p.now + warnIn * 1000} stroke="var(--warn)" label={{ value: `Predicted crossing in ${warnIn} s`, fill: "var(--warn-fg)", fontSize: 10, position: "insideBottomLeft" }} /> : null}
-                      {critIn ? <ReferenceLine x={p.now + critIn * 1000} stroke="var(--crit)" label={{ value: `Predicted crossing in ${critIn} s`, fill: "var(--crit-fg)", fontSize: 10, position: "insideBottomRight" }} /> : null}
+                      {warnIn ? <ReferenceLine x={p.now + warnIn * 1000} stroke="var(--warn)" label={{ value: `Predicted crossing in ${warnIn} s`, fill: "var(--warn-fg)", fontSize: 10, position: "insideBottomRight" }} /> : null}
+                      {critIn ? <ReferenceLine x={p.now + critIn * 1000} stroke="var(--crit)" label={{ value: `Predicted crossing in ${critIn} s`, fill: "var(--crit-fg)", fontSize: 10, position: "insideTopLeft" }} /> : null}
                       <Line dataKey="reading" name="Ambient reading (AT-101)" stroke="var(--fluid)" dot={false} strokeWidth={2} isAnimationActive={false} connectNulls />
                       <Line dataKey="forecast" name="30 s forecast" stroke="var(--primary)" strokeDasharray="6 4" dot={false} strokeWidth={2} isAnimationActive={false} connectNulls />
                     </LineChart>

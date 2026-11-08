@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { ChevronDown, Menu, X } from "lucide-react";
@@ -161,8 +162,7 @@ export function Shot({ src, alt, priority }: { src: string; alt: string; priorit
         <span className="h-2.5 w-2.5 rounded-full bg-line" />
         <span className="h-2.5 w-2.5 rounded-full bg-line" />
       </div>
-      {/* eslint-disable-next-line @next/next/no-img-element -- static 2x screenshots, sized by width/height to avoid layout shift */}
-      <img src={src} alt={alt} width={1440} height={900} loading={priority ? "eager" : "lazy"} decoding="async" className="h-auto w-full" />
+      <Image src={src} alt={alt} width={2880} height={1800} priority={priority} sizes={priority ? "(min-width: 1152px) 1088px, 100vw" : "(min-width: 1024px) 560px, (min-width: 768px) 90vw, 100vw"} className="h-auto w-full" />
     </figure>
   );
 }

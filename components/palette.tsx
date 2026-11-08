@@ -78,14 +78,14 @@ export function CommandPalette() {
 
   return (
     <>
-      <button onClick={() => setOpen(true)} className="hidden min-h-10 min-w-0 flex-1 items-center gap-2 rounded-lg border border-line bg-elev px-3 text-left text-sm text-muted hover:text-fg md:flex md:max-w-xs" aria-keyshortcuts="Control+K Meta+K">
+      <button onClick={() => setOpen(true)} className="hidden min-h-10 w-64 shrink-0 items-center gap-2 rounded-lg border border-line bg-elev px-3 text-left text-sm text-muted hover:text-fg 2xl:flex" aria-keyshortcuts="Control+K Meta+K">
         <Search aria-hidden className="h-4 w-4 shrink-0" />
         <span className="flex-1 truncate">Search pages, tags, actions</span>
         <kbd className="inline-flex items-center gap-0.5 rounded border border-line px-1.5 font-mono text-[11px]">
           <Command aria-hidden className="h-3 w-3" />K
         </kbd>
       </button>
-      <button onClick={() => setOpen(true)} aria-label="Search" className="rounded-lg p-2 text-muted hover:bg-elev md:hidden">
+      <button onClick={() => setOpen(true)} aria-label="Search pages, tags and actions" title="Search (Ctrl K)" className="rounded-lg border border-line p-2 text-muted hover:bg-elev 2xl:hidden">
         <Search className="h-5 w-5" />
       </button>
       <Modal open={open} onClose={close} title="Go to or do">

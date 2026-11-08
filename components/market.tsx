@@ -177,7 +177,7 @@ export function ProductCard({ p, onCoa, onLedger }: { p: Product; onCoa: (p: Pro
         </h3>
         <p className="text-sm text-muted">{p.description}</p>
         <p className="text-xs text-muted">
-          Captured at <span className="font-semibold text-fg">{p.lot.site}</span> on {p.lot.period}
+          Captured at <span className="font-semibold text-fg">{p.lot.site}</span>, {p.lot.period}
         </p>
         {p.specs.length > 0 && (
           <ul className="flex flex-wrap gap-1.5" aria-label="Specifications">

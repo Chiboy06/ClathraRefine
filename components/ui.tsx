@@ -264,7 +264,7 @@ export function Table({ head, children, caption }: { head: ReactNode[]; children
     </div>
   );
 }
-export const Td = ({ children, mono, className }: { children: ReactNode; mono?: boolean; className?: string }) => <td className={cx("px-6 py-4 align-top", mono && "font-mono tabular", className)}>{children}</td>;
+export const Td = ({ children, mono, className }: { children: ReactNode; mono?: boolean; className?: string }) => <td className={cx("px-6 py-4 align-top", mono && "whitespace-nowrap font-mono tabular", className)}>{children}</td>;
 
 /** Small fetch hook: loading, error and data, with manual reload. Keeps the last data while reloading. */
 export function useFetch<T>(url: string | null, deps: unknown[] = []) {

@@ -7,6 +7,7 @@ import { FW, captureRateKgH, DEMO_CAPTURE, removalEfficiency } from "../process"
 import { PLANT } from "../demoData";
 import { relayOn } from "../fsm";
 import { STALE_MS } from "../quality";
+import { riskIndex, risePerSecond, sessionAnomalyZ } from "../predict";
 
 export type Severity = "INFO" | "WARNING" | "CRITICAL" | "PASS" | "AUDIT";
 export type HubEvent = { id: string; at: number; severity: Severity; source: "board" | "app" | "demo"; tag: string; message: string };
@@ -47,6 +48,7 @@ export type Snapshot = {
   overrides: Record<number, { on: boolean; until: number }>;
   plant: Plant;
   leakActive: boolean;
+  riskHistory: { t: number; risk: number }[];
   now: number;
 };
 
@@ -141,6 +143,7 @@ class Hub {
       overrides: {},
       plant: plantAt(now, true),
       leakActive: false,
+      riskHistory: [],
       now,
     };
   }
@@ -185,6 +188,7 @@ class Hub {
       link: { connected: this.snap.status.connected && !stale, perMinute: this.msgTimes.length, lastAt: last?.receivedAt ?? null },
       plant: plantAt(now, !last || last.scrubber === "SCRUBBING" || this.snap.mode === "LIVE"),
       leakActive: this.scenario.leakActive,
+      riskHistory: last ? [...this.snap.riskHistory, { t: now, risk: this.riskNow() }].slice(-120) : this.snap.riskHistory,
     });
   };
 
@@ -275,6 +279,14 @@ class Hub {
     this.alarmsMap.set(alarmId, alarmReduce(a, { type: "shelve", reason, until }));
     this.set({ alarms: [...this.alarmsMap.values()] });
   }
+  /** Risk index from the reading, rate of rise, session anomaly and (DEMO) the look-ahead peak. */
+  riskNow() {
+    const l = this.snap.latest;
+    if (!l) return 0;
+    const samples = this.snap.history.slice(-60).map((h) => ({ t: h.receivedAt, v: h.ambient_mv }));
+    const fc = this.demoForecast(30);
+    return riskIndex({ mv: l.ambient_mv, risePerS: risePerSecond(samples), anomalyZ: sessionAnomalyZ(this.snap.history.map((h) => h.ambient_mv)), forecastMv: fc.length ? Math.max(...fc.map((f) => f.v)) : null });
+  }
   /** DEMO look-ahead from the scenario (Simulated). LIVE forecasts come from lib/model.json via the predict page. */
   demoForecast(seconds = 30) {
     return this.snap.mode === "DEMO" ? this.scenario.lookAhead(seconds) : [];
@@ -328,5 +340,6 @@ export const EMPTY_SNAP: Snapshot = {
   overrides: {},
   plant: plantAt(0, true),
   leakActive: false,
+  riskHistory: [],
   now: 0,
 };
