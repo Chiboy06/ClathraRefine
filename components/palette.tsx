@@ -14,7 +14,7 @@ import { bannerAlarm } from "@/lib/alarms";
 import { can } from "@/lib/roleMatrix";
 import { formatDateTime } from "@/lib/format";
 
-/** SCRAM opens from anywhere through one event, so the header button owns the single SCRAM modal. */
+/** SCRAM is armed from anywhere through one event; the header button still needs a press to confirm. */
 export const SCRAM_EVENT = "clathra:open-scram";
 
 type Item = { id: string; label: string; hint: string; group: "Pages" | "Actions" | "Tags" | "Devices"; icon: LucideIcon; run: () => void };
@@ -47,15 +47,15 @@ export function CommandPalette() {
   const items = useMemo<Item[]>(() => {
     const go = (href: string) => () => router.push(href);
     const actions: Item[] = [
-      ...(can(me?.session?.role, "scram") ? [{ id: "scram", label: "Trigger SCRAM", hint: "Opens the SCRAM confirmation", group: "Actions" as const, icon: OctagonX, run: () => window.dispatchEvent(new Event(SCRAM_EVENT)) }] : []),
+      ...(can(me?.session?.role, "scram") ? [{ id: "scram", label: "Trigger SCRAM", hint: "Arms the SCRAM button; press it to confirm", group: "Actions" as const, icon: OctagonX, run: () => window.dispatchEvent(new Event(SCRAM_EVENT)) }] : []),
       ...(mode === "DEMO" ? [{ id: "leak", label: "Trigger leak (Demo)", hint: "Plays the hazard sequence", group: "Actions" as const, icon: Siren, run: () => getHub().triggerLeak() }] : []),
       { id: "mode", label: `Switch to ${mode === "DEMO" ? "LIVE" : "DEMO"} data`, hint: "Data mode", group: "Actions", icon: Radio, run: () => setMode(mode === "DEMO" ? "LIVE" : "DEMO") },
       { id: "theme", label: `Switch to ${theme === "night" ? "Day" : "Night"} theme`, hint: "Appearance", group: "Actions", icon: Moon, run: () => setTheme(theme === "night" ? "day" : "night") },
-      { id: "connect", label: "Connect a device", hint: "Settings", group: "Actions", icon: Radio, run: go("/app/connect") },
+      { id: "connect", label: "Connect a device", hint: "Settings", group: "Actions", icon: Radio, run: go("/app/settings/connect") },
       { id: "ticket", label: "Open a support ticket", hint: "Support desk", group: "Actions", icon: FileText, run: go("/app/support") },
     ];
     const pages: Item[] = NAV.flatMap((g) => g.items.map((i) => ({ id: `p-${i.href}`, label: i.label, hint: g.group, group: "Pages" as const, icon: i.icon, run: go(i.href) })));
-    const tags: Item[] = TAGS.map((t) => ({ id: `t-${t.id}`, label: `${t.id} ${t.name}`, hint: t.source === "board" ? "Board tag" : "Simulated tag", group: "Tags", icon: TagIcon, run: go(`/app/measurements?tag=${t.id}`) }));
+    const tags: Item[] = TAGS.map((t) => ({ id: `t-${t.id}`, label: `${t.id} ${t.name}`, hint: t.source === "board" ? "Board tag" : "Simulated tag", group: "Tags", icon: TagIcon, run: go("/app/monitoring/trends") }));
     const devices: Item[] = SITES.map((s) => ({ id: `d-${s.thing}`, label: s.thing, hint: s.name, group: "Devices", icon: Cpu, run: go(`/app/devices/${encodeURIComponent(s.thing)}`) }));
     return [...actions, ...pages, ...tags, ...devices];
   }, [router, me, mode, theme, setMode, setTheme]);

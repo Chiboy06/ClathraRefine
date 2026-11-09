@@ -89,3 +89,22 @@ See "Results" below for the latest run.
 ## Results
 
 (Filled in by the final verification run below.)
+
+## Remodification
+
+- **Navigation:** top tabs with left sub-menus, alarm counters by priority, a status bar with time, link, data mode and assistant state. Old routes redirect directly to their final home.
+- **Removed:** the product, solutions, company, resources and security pages (redirect to `/`); the relay deck; the measurements page; certificate and Root CA downloads; two-person approval on relays and SCRAM.
+- **SCRAM:** one action, hold 1 s or press then confirm within 4 s, for operators and above; audited.
+- **Plant diagram:** a dark live mimic with values on the equipment, select-before-operate for the fan and pump (arm 10 s, confirm from telemetry within 15 s), manual and automatic modes, and the board's refusal reasons. A 3D view of the skid.
+- **AI tab:** assistant (Gemini through Convex with tools, rule fallback, proactive alerts and a 15-minute briefing), predictions with a leak countdown and anomaly explainer, sensor health, solvent exhaustion forecast, training mode with decision points and scores. The assistant drafts the shift report.
+- **Settings:** connect a device as six steps with a ping test and a first-data counter, and an ingest checklist that never shows `INGEST_KEY`; site details; sensors and MQ-135 calibration; users and roles; alarm limits and safety bypasses.
+- **Firmware rev C:** MQ-135 inputs on GPIO4 and GPIO5, ACK button moved to GPIO12, `mode`, `fan` and `pump` commands with board interlocks, acks with a `reason`, telemetry adds `mode`, `co2_in_mv` and `co2_out_mv`. Compile not verified (see ASSUMPTIONS 41).
+- **Ingest:** `/ingest` on Convex accepts the AWS destination confirmation, checks `x-ingest-key`, derives CO2 ppm and reduction. Live test: 200 for a good key, 401 for a missing or wrong key.
+
+### Convex limits
+
+Telemetry every 2 s, running all day, is about 1.3 million ingest calls a month (43,200 a day), before events, acks and dashboard queries. At the time of writing the Convex free plan allows about 1 million function calls a month, so one board at 2 s exceeds it. Recommendations:
+- send telemetry every 5 s (about 518,000 calls a month) while on the free plan, keeping events immediate; or
+- move to a paid plan before connecting more than one board at 2 s.
+
+Check the current allowance in the Convex dashboard before deciding.

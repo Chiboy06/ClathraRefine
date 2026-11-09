@@ -5,11 +5,17 @@ test("old console paths redirect permanently to /app", async ({ request }) => {
   const cases: [string, string][] = [
     ["/dashboard", "/app"],
     ["/alarms", "/app/alarms"],
-    ["/onboarding", "/app/connect"],
+    ["/onboarding", "/app/settings/connect"],
+    ["/app/relays", "/app/plant"],
+    ["/app/measurements", "/app/history"],
+    ["/app/predict", "/app/ai/predictions"],
+    ["/app/events", "/app/alarms/events"],
+    ["/product/prediction", "/"],
+    ["/security", "/"],
     ["/welcome", "/app/organisation"],
     ["/marketplace", "/app/marketplace"],
     ["/marketplace/p/liquid-co2-food", "/app/marketplace/p/liquid-co2-food"],
-    ["/devices/ESP32S3-N16R8-HARNESS-01", "/app/devices/ESP32S3-N16R8-HARNESS-01"],
+    ["/devices/ESP32S3-N16R8-HARNESS-01", "/app/maintenance"],
   ];
   for (const [from, to] of cases) {
     const r = await request.get(from, { maxRedirects: 0 });
@@ -37,7 +43,7 @@ test("first-run flow: organisation, first site, connect, wait for data", async (
   await page.getByLabel("Station ID").fill("ONNE-01");
   await page.getByLabel("Device thing name").fill(`E2E-THING-${Date.now()}`);
   await page.getByRole("button", { name: "Save site" }).click();
-  await expect(page.getByRole("heading", { name: "Live connection diagnostics" })).toBeVisible();
+  await expect(page.getByTestId("test-connection")).toBeVisible();
   await page.getByRole("button", { name: /wait for data/ }).click();
   await expect(page.getByText("Listening for telemetry from AWS IoT Core")).toBeVisible();
   await expect(page.getByTestId("mode-badge")).toContainText("LIVE");
@@ -56,7 +62,7 @@ test("Use demo plant skips device connection and switches to DEMO", async ({ pag
 test("prediction page in DEMO runs ahead of the alarm", async ({ page }) => {
   await prefs(page, { mode: "DEMO" });
   await login(page, "demo-operator");
-  await page.goto("/app/predict");
+  await page.goto("/app/ai/predictions");
   await expect(page.getByTestId("risk-index")).toBeVisible();
   await page.getByRole("button", { name: "Simulate a leak build-up" }).click();
   await expect(page.getByText(/Predicted crossing in \d+ s: trip/)).toBeVisible({ timeout: 10_000 });
@@ -68,7 +74,7 @@ test("prediction page in DEMO runs ahead of the alarm", async ({ page }) => {
 test("prediction page in LIVE without a model shows how to train one", async ({ page }) => {
   await prefs(page, { mode: "LIVE" });
   await login(page, "demo-operator");
-  await page.goto("/app/predict");
+  await page.goto("/app/ai/predictions");
   await expect(page.getByText("No trained model yet").first()).toBeVisible();
   await expect(page.getByText("train_models.py").first()).toBeVisible();
 });
@@ -78,13 +84,13 @@ test("command palette jumps to a page and reaches SCRAM", async ({ page }) => {
   await login(page, "demo-operator");
   await page.goto("/app");
   await page.keyboard.press("Control+k");
-  await page.getByRole("combobox").fill("alarms and");
+  await page.getByRole("combobox").fill("Event journal");
   await page.keyboard.press("Enter");
-  await expect(page).toHaveURL(/\/app\/alarms$/);
+  await expect(page).toHaveURL(/\/app\/alarms\/events$/);
   await page.keyboard.press("Control+k");
   await page.getByRole("combobox").fill("Trigger SCRAM");
   await page.keyboard.press("Enter");
-  await expect(page.getByRole("dialog", { name: "Master SCRAM" })).toBeVisible();
+  await expect(page.getByTestId("scram")).toContainText("Confirm SCRAM");
 });
 
 test("contact form stores a demo request", async ({ page }) => {
@@ -94,4 +100,23 @@ test("contact form stores a demo request", async ({ page }) => {
   await page.getByRole("textbox", { name: "Company" }).fill("Example Gas Ltd");
   await page.getByRole("button", { name: "Book a demo" }).last().click();
   await expect(page.getByText("Your request is in")).toBeVisible();
+});
+
+test("Connect a device: test connection succeeds in DEMO", async ({ page }) => {
+  await prefs(page, { mode: "DEMO" });
+  await login(page, "demo-admin");
+  await page.goto("/app/settings/connect");
+  await page.getByTestId("test-connection").click();
+  await expect(page.getByTestId("test-result")).toContainText("Connected", { timeout: 12_000 });
+  await expect(page.getByText(/BEGIN CERTIFICATE/)).toHaveCount(0);
+});
+
+test("assistant answers the outlet CO2 with a value and a time", async ({ page }) => {
+  await prefs(page, { mode: "DEMO" });
+  await login(page, "demo-operator");
+  await page.goto("/app");
+  await page.getByTestId("assistant-launcher").click();
+  await page.getByPlaceholder("Ask about the plant").first().fill("what is the outlet CO2 now?");
+  await page.getByRole("button", { name: "Send" }).first().click();
+  await expect(page.getByTestId("assistant-msg").last()).toContainText(/Outlet CO2 is [\d,]+ ppm .*\d{2}:\d{2}/, { timeout: 20_000 });
 });

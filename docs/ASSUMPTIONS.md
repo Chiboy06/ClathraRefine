@@ -48,3 +48,15 @@ Choices made where the briefs were unclear or conflicted, with the reason. Build
 33. **Open Graph images** are generated per route group (home and other site pages share one card; each product and solution page gets its own title on the card).
 34. **Company page team section** is a placeholder until real names are supplied.
 35. **Demo seller and station names** were changed from event-specific names to neutral ones ("Demo Seller Ltd", `CLR-REF-NG-9842`) as part of removing event framing.
+
+## Remodification (Convex, plant control, AI)
+
+36. **CO2 wording.** Chosen with the user: plain ppm and % on operator screens; the MQ-135 model appears only in the device tree and Settings; tokens, COAs and exports keep Demo and Target labels.
+37. **Convex replaces DynamoDB reads.** Telemetry, events and rollups come from Convex. The records store (sites, overrides, audit, orders and the rest) uses Convex when `CONVEX_URL` and `CONVEX_SERVER_KEY` are set, then DynamoDB, then memory. The DynamoDB tables are left for reference.
+38. **Convex deployment.** Development deployment `clear-heron-393` in eu-west-1. A production deployment is not created yet.
+39. **Gemini key.** `GEMINI_API_KEY` is not set; the user must add it in the Convex dashboard. Until then the assistant answers with the rule-based fallback, which cites values and times from the screen.
+40. **Safety bypasses.** Siren mute and manual extension are simulated in DEMO. The firmware has no bypass command, so in LIVE they show "Requires firmware support" after approval.
+41. **Firmware compile not verified.** Downloading arduino-cli was blocked as external code. Rev C must be compiled and flashed by hand (Arduino-ESP32 core 3.x) before LIVE manual control is used.
+42. **Sensor health and solvent forecast** are rule-based and a linear fit, not trained models. The gas heat map uses inverse-distance weighting and is labelled indicative.
+43. **3D plant view** is an illustrative model built from primitives, not a CAD model of the skid.
+44. **Skills.** Installed by git clone and copy: find-skills, convex, convex-crons, convex-expert, convex-test. No official react-three-fiber skill was found; the three.js animation skill was used for reference only.

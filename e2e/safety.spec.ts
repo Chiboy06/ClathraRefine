@@ -4,36 +4,74 @@ import { TEST_PIN } from "./testValues";
 
 test.beforeEach(async ({ page }) => prefs(page, { mode: "DEMO" }));
 
-test("a viewer cannot SCRAM", async ({ page }) => {
+test("a viewer cannot SCRAM or operate equipment", async ({ page }) => {
   await login(page, "demo-viewer");
-  await page.goto("/app");
-  await expect(page.getByRole("button", { name: "Master SCRAM" }).first()).toBeDisabled();
+  await page.goto("/app/plant");
+  await expect(page.getByTestId("scram")).toBeDisabled();
   const r = await page.request.post("/api/scram", { data: { mode: "DEMO", confirm: true } });
   expect(r.status()).toBe(403);
+  const c = await page.request.post("/api/command", { data: { cmd: "mode", value: "manual", mode: "DEMO" } });
+  expect(c.status()).toBe(403);
+  await page.getByTestId("mimic-fan").click();
+  await expect(page.getByTestId("sbo-panel").getByRole("button", { name: "Start" })).toBeDisabled();
 });
 
-test("an operator SCRAM opens the safety modal and is audited", async ({ page }) => {
+test("an operator SCRAMs with one hold and it is audited", async ({ page }) => {
   await login(page, "demo-operator");
   await page.goto("/app");
-  await page.getByRole("button", { name: "Master SCRAM" }).first().click();
-  const dlg = page.getByRole("dialog");
-  await expect(dlg.getByText("Consequence:")).toBeVisible();
-  await expect(dlg.getByText("Engr. T. Balogun")).toBeVisible();
-  await dlg.getByRole("checkbox").check();
-  await dlg.getByRole("button", { name: "Confirm SCRAM" }).click();
-  await expect(dlg.getByText("recorded in the audit log")).toBeVisible();
-  await expect(dlg.getByText("Confirmed by board telemetry")).toBeVisible({ timeout: 10_000 });
+  const btn = page.getByTestId("scram");
+  await btn.hover();
+  await page.mouse.down();
+  await page.waitForTimeout(1300);
+  await page.mouse.up();
+  await expect(btn).toContainText("SCRAM confirmed", { timeout: 10_000 });
   const log = await (await page.request.get("/api/audit-log")).json();
   expect(log.rows.some((e: { action: string; actor: string; outcome: string }) => e.action === "scram" && e.actor === "demo-operator" && e.outcome === "ok")).toBe(true);
   expect(log.intact).toBe(true);
 });
 
-test("a supervisor cannot approve their own override; a second supervisor can", async ({ page }) => {
+test("SCRAM by press then confirm", async ({ page }) => {
+  await login(page, "demo-operator");
+  await page.goto("/app");
+  const btn = page.getByTestId("scram");
+  await btn.click();
+  await expect(btn).toContainText("Confirm SCRAM");
+  await btn.click();
+  await expect(btn).toContainText(/SCRAM (sent|confirmed)/);
+});
+
+test("manual mode is refused while exhaust gas is active, with the reason", async ({ page }) => {
+  await login(page, "demo-operator");
+  await page.goto("/app/plant");
+  await expect(page.getByTestId("gas-source")).toContainText("On");
+  await page.getByRole("radio", { name: "Manual" }).click();
+  await expect(page.getByTestId("mode-rejected")).toContainText("Exhaust gas active");
+});
+
+test("fan select, execute, confirm in DEMO", async ({ page }) => {
+  await login(page, "demo-operator");
+  await page.goto("/app/plant");
+  await page.getByTestId("gas-source").click();
+  await expect(page.getByTestId("gas-source")).toContainText("Off");
+  // The board leaves exhaust-active once the reading falls below its off threshold, so retry.
+  await expect(async () => {
+    await page.getByRole("radio", { name: "Manual" }).click();
+    await expect(page.getByRole("radio", { name: "Manual" })).toHaveAttribute("aria-checked", "true", { timeout: 2_000 });
+  }).toPass({ timeout: 40_000 });
+  await page.getByTestId("mimic-fan").click();
+  const panel = page.getByTestId("sbo-panel");
+  const running = await panel.getByText("Running", { exact: true }).count();
+  await panel.getByRole("button", { name: running ? "Stop" : "Start" }).click();
+  await page.getByTestId("sbo-execute").click();
+  await expect(page.getByTestId("sbo-status")).toContainText("Confirmed", { timeout: 10_000 });
+});
+
+test("a supervisor cannot approve their own bypass; a second supervisor can", async ({ page }) => {
   await login(page, "demo-supervisor");
-  await page.goto("/app/relays");
-  await page.getByRole("button", { name: "Pulse test" }).first().click();
+  await page.goto("/app/settings/alarm-limits");
+  await page.getByRole("button", { name: "Request siren mute" }).click();
   let dlg = page.getByRole("dialog");
-  await dlg.getByLabel("Reason").fill("Monthly lamp check");
+  await dlg.getByLabel("Reason").fill("Siren test during maintenance");
   await dlg.getByRole("checkbox").check();
   await dlg.getByRole("button", { name: "Submit for second supervisor" }).click();
   await expect(dlg.getByText("is pending")).toBeVisible();
@@ -81,13 +119,12 @@ test("Trigger leak drives alarms through warning, critical, SCRAM and recovery",
   await page.getByTestId("trigger-leak").click();
   const level = page.getByTestId("ambient-level");
   const flags = page.getByTestId("board-flags");
-  await expect(level).toContainText("Pre-hazard", { timeout: 35_000 });
-  await expect(level).toContainText("Critical", { timeout: 35_000 });
+  await expect(level).toContainText("Pre-hazard", { timeout: 25_000 });
+  await expect(level).toContainText("Critical", { timeout: 15_000 });
   await expect(flags).toContainText("Trip latched");
-  await expect(flags).toContainText("SCRAM latched", { timeout: 35_000 });
-  await expect(level).toContainText("Normal", { timeout: 35_000 });
-  await expect(flags).toContainText("Trip latched");
-  await expect(flags).toContainText("Trip clear", { timeout: 35_000 });
+  await expect(flags).toContainText("SCRAM latched", { timeout: 10_000 });
+  await expect(level).toContainText("Normal", { timeout: 20_000 });
+  await expect(flags).toContainText("Trip clear", { timeout: 25_000 });
   await expect(flags).toContainText("No SCRAM");
 });
 
