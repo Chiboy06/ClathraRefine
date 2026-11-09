@@ -4,9 +4,10 @@ import { chromium } from "@playwright/test";
 
 const base = process.argv[2] ?? "http://localhost:3100";
 const SHOTS = [
-  { file: "predict", path: "/app/predict", theme: "day", leakWaitMs: 12_000 },
+  { file: "predict", path: "/app/ai/predictions", theme: "day", leakWaitMs: 12_000 },
   { file: "alarms", path: "/app/alarms", theme: "night", leakWaitMs: 28_000 },
-  { file: "measurements", path: "/app/measurements", theme: "day" },
+  { file: "plant", path: "/app/plant", theme: "day" },
+  { file: "overview", path: "/app", theme: "day" },
   { file: "marketplace", path: "/app/marketplace", theme: "day" },
 ];
 

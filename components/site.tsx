@@ -2,11 +2,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { ChevronDown, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { useMe } from "./me";
 import { cx } from "./ui";
 import { Mark } from "./mark";
-import { INDUSTRIES, PRODUCTS_PAGES } from "@/lib/siteContent";
 
 export function Container({ children, className }: { children: ReactNode; className?: string }) {
   return <div className={cx("mx-auto w-full max-w-6xl px-6 md:px-8", className)}>{children}</div>;
@@ -27,33 +26,11 @@ export function CtaLink({ href, children, variant = "primary", testId }: { href:
   );
 }
 
-function Menu_({ label, items }: { label: string; items: { href: string; label: string; hint: string }[] }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="relative" onMouseLeave={() => setOpen(false)}>
-      <button onClick={() => setOpen((o) => !o)} onMouseEnter={() => setOpen(true)} aria-expanded={open} className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm hover:bg-elev">
-        {label} <ChevronDown aria-hidden className="h-3.5 w-3.5" />
-      </button>
-      {open && (
-        <div className="absolute left-0 top-full z-40 w-72 pt-2">
-          <ul className="rounded-2xl border border-line bg-panel p-2 shadow-[0_12px_32px_-12px_rgba(15,23,42,0.25)]">
-            {items.map((i) => (
-              <li key={i.href}>
-                <Link href={i.href} onClick={() => setOpen(false)} className="block rounded-xl px-3 py-2 hover:bg-elev">
-                  <span className="block text-sm font-semibold">{i.label}</span>
-                  <span className="block text-xs text-muted">{i.hint}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const PRODUCT_ITEMS = PRODUCTS_PAGES.map((p) => ({ href: `/product/${p.slug}`, label: p.name, hint: p.title }));
-const SOLUTION_ITEMS = INDUSTRIES.map((i) => ({ href: `/solutions/${i.slug}`, label: i.name, hint: i.lead }));
+const LINKS = [
+  { href: "/pricing", label: "Pricing" },
+  { href: "/contact", label: "Contact" },
+  { href: "/app", label: "Demo plant" },
+];
 
 /** Signed-in visitors see "Open app" instead of "Sign in". */
 function AccountLinks() {
@@ -83,17 +60,11 @@ export function SiteHeader() {
           <Mark className="h-6 w-6" /> ClathraRefine
         </Link>
         <nav aria-label="Site" className="ml-4 hidden items-center gap-1 lg:flex">
-          <Menu_ label="Product" items={PRODUCT_ITEMS} />
-          <Menu_ label="Solutions" items={SOLUTION_ITEMS} />
-          <Link href="/pricing" className="rounded-full px-3 py-2 text-sm hover:bg-elev">
-            Pricing
-          </Link>
-          <Link href="/security" className="rounded-full px-3 py-2 text-sm hover:bg-elev">
-            Security
-          </Link>
-          <Link href="/resources" className="rounded-full px-3 py-2 text-sm hover:bg-elev">
-            Resources
-          </Link>
+          {LINKS.map((l) => (
+            <Link key={l.href} href={l.href} className="rounded-full px-3 py-2 text-sm hover:bg-elev">
+              {l.label}
+            </Link>
+          ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
           <AccountLinks />
@@ -105,7 +76,7 @@ export function SiteHeader() {
       {mobile && (
         <nav aria-label="Site mobile" className="border-t border-line bg-panel lg:hidden">
           <Container className="grid grid-cols-2 gap-x-6 gap-y-1 py-4 text-sm">
-            {[...PRODUCT_ITEMS, ...SOLUTION_ITEMS, { href: "/pricing", label: "Pricing" }, { href: "/security", label: "Security" }, { href: "/resources", label: "Resources" }, { href: "/company", label: "Company" }, { href: "/sign-in", label: "Sign in" }].map((i) => (
+            {[...LINKS, { href: "/sign-in", label: "Sign in" }].map((i) => (
               <Link key={i.href} href={i.href} onClick={() => setMobile(false)} className="rounded-lg px-2 py-2 hover:bg-elev">
                 {i.label}
               </Link>
@@ -118,20 +89,16 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
-  const cols: { h: string; links: { href: string; label: string }[] }[] = [
-    { h: "Product", links: PRODUCT_ITEMS.map(({ href, label }) => ({ href, label })) },
-    { h: "Solutions", links: SOLUTION_ITEMS.map(({ href, label }) => ({ href, label })) },
-    { h: "Company", links: [{ href: "/company", label: "About" }, { href: "/security", label: "Security" }, { href: "/pricing", label: "Pricing" }, { href: "/resources", label: "Resources" }, { href: "/contact", label: "Contact" }] },
-  ];
+  const cols = [{ h: "ClathraRefine", links: [...LINKS, { href: "/sign-in", label: "Sign in" }, { href: "/sign-up", label: "Sign up" }] }];
   return (
     <footer className="border-t border-line bg-panel">
-      <Container className="grid gap-10 py-14 md:grid-cols-[1.4fr_repeat(3,1fr)]">
+      <Container className="grid gap-10 py-14 md:grid-cols-[2fr_1fr]">
         <div>
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <Mark className="h-6 w-6" /> ClathraRefine
           </Link>
           <p className="mt-3 max-w-xs text-sm text-muted">Hazard prediction and gas leak prevention with carbon capture.</p>
-          <p className="mt-6 max-w-xs text-xs text-muted">The MQ-2 class sensors used today detect combustible gases and smoke, not CO2. CO2 figures in the product are simulated until an infrared CO2 analyser is fitted, and are labelled that way.</p>
+          <p className="mt-6 max-w-xs text-xs text-muted">CO2 readings come from low-cost MQ-135 sensors and are indicative. Carbon tokens and certificates are Demo, with Target standards, not certified claims.</p>
         </div>
         {cols.map((c) => (
           <nav key={c.h} aria-label={c.h}>
