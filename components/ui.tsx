@@ -57,12 +57,29 @@ export function Page({ title, subtitle, actions, children }: { title: string; su
   );
 }
 
-export function Card({ title, actions, children, className, tone }: { title?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; tone?: Tone }) {
+/** "?" help popover: explanation lives here, not in paragraphs on the card. */
+export function Help({ children, label = "Help" }: { children: ReactNode; label?: string }) {
+  return (
+    <details className="relative inline-block normal-case tracking-normal">
+      <summary aria-label={label} className="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-line text-[11px] font-bold text-muted hover:text-fg [&::-webkit-details-marker]:hidden">
+        ?
+      </summary>
+      <div className="absolute left-0 top-6 z-30 w-72 rounded-xl border border-line bg-panel p-3 text-xs font-normal leading-relaxed text-fg shadow-lg">{children}</div>
+    </details>
+  );
+}
+
+export function Card({ title, actions, children, className, tone, help }: { title?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; tone?: Tone; help?: ReactNode }) {
   return (
     <section className={cx("min-w-0 rounded-2xl border bg-panel p-6", tone ? TONE_BORDER[tone] : "border-line", className)}>
       {(title || actions) && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          {title && <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">{title}</h2>}
+          {title && (
+            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted">
+              {title}
+              {help && <Help label={`About ${typeof title === "string" ? title : "this card"}`}>{help}</Help>}
+            </h2>
+          )}
           {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
         </div>
       )}
