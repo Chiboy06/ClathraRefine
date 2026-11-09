@@ -29,7 +29,7 @@ export function Mimic({ v, layers, selected, onSelect, interlocks }: { v: PlantV
     <g
       role="button"
       tabIndex={0}
-      aria-label={`${label}: ${isOn ? "on" : "off"}. Select to operate`}
+      aria-label={`${label} ${isOn ? "RUNNING" : "STOPPED"}${layers.interlocks && extra ? ` ${extra}` : ""}. Select to operate`}
       onClick={() => onSelect(eq)}
       onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onSelect(eq)}
       className="cursor-pointer focus:outline-none"

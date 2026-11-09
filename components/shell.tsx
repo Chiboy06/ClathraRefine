@@ -84,10 +84,12 @@ function AlarmCounters() {
     { k: "low", label: "Low", cls: "bg-slate text-white" },
   ];
   return (
-    <Link href="/app/alarms" aria-label={`Alarms: ${items.map((i) => `${n(i.k)} ${i.label.toLowerCase()}`).join(", ")}`} className="hidden items-center gap-1 sm:flex" data-testid="alarm-counters">
+    <Link href="/app/alarms" className="relative hidden items-center gap-1 sm:flex" data-testid="alarm-counters">
+      <span className="sr-only">Alarms:</span>
       {items.map((i) => (
         <span key={i.k} title={`${i.label} alarms`} className={cx("inline-flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 font-mono text-xs font-bold tabular", n(i.k) ? i.cls : "bg-elev text-muted")}>
           {n(i.k)}
+          <span className="sr-only"> {i.label.toLowerCase()},</span>
         </span>
       ))}
     </Link>
