@@ -135,12 +135,15 @@ export function Mimic({ v, layers, selected, onSelect, interlocks }: { v: PlantV
             {num(v.loadingPct.value, 0)}% loaded
           </text>
           <text x={825} y={403} textAnchor="middle" fontSize={12} fill="var(--fg)" fontFamily="var(--font-mono)">
-            pH {num(v.ph.value, 2)} · {num(v.solventC.value, 1)} °C
+            pH {num(v.ph.value, 2)}
           </text>
-          <text x={430} y={300} textAnchor="middle" fontSize={12} fill="var(--muted)" fontFamily="var(--font-mono)">
+          <text x={825} y={421} textAnchor="middle" fontSize={12} fill="var(--fg)" fontFamily="var(--font-mono)">
+            {num(v.solventC.value, 1)} °C
+          </text>
+          <text x={445} y={380} textAnchor="middle" fontSize={12} fill="var(--muted)" fontFamily="var(--font-mono)">
             {num(v.gasLpm.value, 2)} L/min gas
           </text>
-          <text x={680} y={300} textAnchor="middle" fontSize={12} fill="var(--muted)" fontFamily="var(--font-mono)">
+          <text x={636} y={300} textAnchor="start" fontSize={12} fill="var(--muted)" fontFamily="var(--font-mono)">
             {num(v.liquidLpm.value, 2)} L/min solvent
           </text>
         </>

@@ -58,8 +58,13 @@ test("fan select, execute, confirm in DEMO", async ({ page }) => {
     await page.getByRole("radio", { name: "Manual" }).click();
     await expect(page.getByRole("radio", { name: "Manual" })).toHaveAttribute("aria-checked", "true", { timeout: 2_000 });
   }).toPass({ timeout: 40_000 });
-  await page.getByTestId("mimic-fan").click();
+  // Pick a legal action: stop the pump if it runs (the fan cannot stop first), else toggle the fan.
+  await page.getByTestId("mimic-pump").click();
   const panel = page.getByTestId("sbo-panel");
+  if (!(await panel.getByText("Running", { exact: true }).count())) {
+    await page.keyboard.press("Escape");
+    await page.getByTestId("mimic-fan").click();
+  }
   const running = await panel.getByText("Running", { exact: true }).count();
   await panel.getByRole("button", { name: running ? "Stop" : "Start" }).click();
   await page.getByTestId("sbo-execute").click();

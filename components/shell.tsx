@@ -227,7 +227,9 @@ function CartButton() {
 const IDLE_MS = 30 * 60_000;
 function IdleClerk({ onIdle }: { onIdle: (fn: () => Promise<void>) => void }) {
   const clerk = useClerk();
-  useEffect(() => onIdle(() => clerk.signOut({ redirectUrl: "/sign-in?reason=idle" })), [clerk, onIdle]);
+  useEffect(() => {
+    onIdle(() => clerk.signOut({ redirectUrl: "/sign-in?reason=idle" }));
+  }, [clerk, onIdle]);
   return null;
 }
 /** 30-minute idle timeout on console pages. */

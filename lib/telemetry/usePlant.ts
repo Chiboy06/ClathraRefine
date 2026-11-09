@@ -9,7 +9,9 @@ const noop = () => () => {};
 export function usePlant() {
   const mode = usePrefs((s) => s.mode);
   const hub = typeof window === "undefined" ? null : getHub();
-  useEffect(() => hub?.setMode(mode), [hub, mode]);
+  useEffect(() => {
+    hub?.setMode(mode);
+  }, [hub, mode]);
   const snap = useSyncExternalStore(hub?.subscribe ?? noop, hub?.getSnapshot ?? (() => EMPTY_SNAP), () => EMPTY_SNAP);
   return { ...snap, ready: snap.now > 0 };
 }

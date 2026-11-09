@@ -4,10 +4,11 @@ import { chromium } from "@playwright/test";
 
 const base = process.argv[2] ?? "http://localhost:3100";
 const SHOTS = [
+  // Still of the 3D view for the overview plant card.
+  { file: "plant-3d", path: "/app/plant/3d", theme: "day", out: "public/images/plant-3d.png", selector: "canvas" },
   { file: "predict", path: "/app/ai/predictions", theme: "day", leakWaitMs: 12_000 },
   { file: "alarms", path: "/app/alarms", theme: "night", leakWaitMs: 28_000 },
   { file: "plant", path: "/app/plant", theme: "day" },
-  { file: "overview", path: "/app", theme: "day" },
   { file: "marketplace", path: "/app/marketplace", theme: "day" },
 ];
 
@@ -23,7 +24,9 @@ for (const s of SHOTS) {
     await page.getByRole("button", { name: /Simulate a leak build-up|Trigger leak/ }).first().click();
     await page.waitForTimeout(s.leakWaitMs);
   }
-  await page.screenshot({ path: `public/images/product/${s.file}.png` });
+  const out = s.out ?? `public/images/product/${s.file}.png`;
+  if (s.selector) await page.locator(s.selector).first().screenshot({ path: out });
+  else await page.screenshot({ path: out });
   console.log("saved", s.file);
   await ctx.close();
 }

@@ -139,7 +139,10 @@ export function Conversation({ compact }: { compact?: boolean }) {
   const { msgs, busy } = useAssistant();
   const [q, setQ] = useState("");
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ block: "end" }), [msgs.length]);
+  // Braces: scrollIntoView returns a Promise in newer browsers, and an effect must not return one.
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: "end" });
+  }, [msgs.length]);
   const quick = ["What is the outlet CO2 now?", "Why did the last alarm happen?", "Walk me through a trip", "How long until the solvent saturates?", "Brief me"];
   return (
     <div className="flex h-full min-h-0 flex-col">
