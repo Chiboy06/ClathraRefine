@@ -26,7 +26,7 @@ export const usePrefs = create<Prefs>()(
     (set) => ({
       unit: "PCT",
       currency: "NGN",
-      theme: "night",
+      theme: "day",
       mode: "DEMO",
       rate: 1450,
       setUnit: (unit) => set({ unit }),

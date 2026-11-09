@@ -63,6 +63,11 @@ export class ScenarioSource implements TelemetrySource {
   replaceSolvent() {
     this.loadedG = 0;
   }
+  /** Approved safety bypass (DEMO): mute the siren, or keep manual mode past its 10 min idle return. */
+  bypass(kind: string, minutes: number) {
+    if (kind === "siren_mute") this.board = { ...this.board, sirenSilenced: true };
+    if (kind === "manual_extend" && this.board.mode === "MANUAL") this.board = { ...this.board, lastCmdAt: this.uptime + minutes * 60_000 };
+  }
   /** Manual command through the board's own interlocks (DEMO). */
   command(c: Command): { accepted: boolean; reason?: string } {
     const r = boardCommand(this.board, c, this.uptime);

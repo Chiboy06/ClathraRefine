@@ -3,8 +3,10 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { SignOutButton, useClerk } from "@clerk/nextjs";
-import { Activity, AlarmClock, FlaskConical, LogOut, Menu, Moon, PanelLeftClose, PanelLeftOpen, Radio, ShoppingCart, Sun, Wifi, WifiOff, X } from "lucide-react";
-import { NAV, isActive } from "./nav";
+import { AlarmClock, Bot, FlaskConical, LogOut, Moon, Radio, ShoppingCart, Sun, Wifi, WifiOff } from "lucide-react";
+import { Mark } from "./mark";
+import { AssistantLauncher } from "./assistant";
+import { NAV, activeTab, isActive } from "./nav";
 import { CommandPalette, NotificationCentre } from "./palette";
 import { cx, Segmented, useMounted } from "./ui";
 import { useMe } from "./scada";
@@ -15,68 +17,80 @@ import { bannerAlarm } from "@/lib/alarms";
 import { formatTime } from "@/lib/format";
 import { CartDrawer } from "./market";
 
-function Sidebar({ expanded, onToggle, mobileOpen, onCloseMobile }: { expanded: boolean; onToggle: () => void; mobileOpen: boolean; onCloseMobile: () => void }) {
+/** Top tabs, always visible. */
+function TabBar() {
   const path = usePathname();
-  const nav = (wide: boolean) => (
-    <nav aria-label="Main" className="flex flex-col gap-4 py-4">
-      {NAV.map((g) => (
-        <div key={g.group}>
-          {wide ? <div className="px-5 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted">{g.group}</div> : <div className="mx-3 mb-2 border-t border-line" aria-hidden />}
-          <ul>
-            {g.items.map((it) => {
-              const active = isActive(path, it.href);
-              return (
-                <li key={it.href}>
-                  <Link
-                    href={it.href}
-                    onClick={onCloseMobile}
-                    aria-current={active ? "page" : undefined}
-                    title={wide ? undefined : it.label}
-                    className={cx("mx-2 flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-150", active ? "bg-primary-bg font-semibold text-primary-fg" : "text-muted hover:bg-elev hover:text-fg", !wide && "justify-center")}
-                  >
-                    <it.icon aria-hidden className="h-4 w-4 shrink-0" />
-                    {wide ? it.label : <span className="sr-only">{it.label}</span>}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
+  const tab = activeTab(path);
+  return (
+    <nav aria-label="Sections" className="flex min-w-0 flex-1 overflow-x-auto">
+      <ul className="flex items-stretch gap-1">
+        {NAV.map((t) => {
+          const on = tab?.group === t.group;
+          return (
+            <li key={t.group}>
+              <Link
+                href={t.items[0].href}
+                aria-current={on ? "page" : undefined}
+                className={cx("flex h-12 items-center gap-2 whitespace-nowrap border-b-2 px-3 text-sm font-semibold transition-colors duration-150", on ? "border-primary text-fg" : "border-transparent text-muted hover:text-fg")}
+              >
+                <t.icon aria-hidden className="h-4 w-4" />
+                {t.group}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
+}
+
+/** The active tab's short sub-menu: left column on desktop, chips on mobile. */
+function SubMenu() {
+  const path = usePathname();
+  const tab = activeTab(path);
+  if (!tab) return null;
   return (
-    <>
-      <aside className={cx("sticky top-0 hidden h-screen shrink-0 flex-col overflow-y-auto border-r border-line bg-nav lg:flex", expanded ? "w-[260px]" : "w-16")}>
-        <div className={cx("flex h-16 items-center border-b border-line", expanded ? "justify-between px-5" : "justify-center")}>
-          {expanded && (
-            <Link href="/" className="flex items-center gap-2 font-bold">
-              <Activity aria-hidden className="h-5 w-5 text-fluid" /> ClathraRefine
-            </Link>
-          )}
-          <button onClick={onToggle} aria-label={expanded ? "Collapse navigation" : "Expand navigation"} className="rounded p-1.5 text-muted hover:bg-elev hover:text-fg">
-            {expanded ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
-          </button>
-        </div>
-        {nav(expanded)}
-      </aside>
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
-          <div className="absolute inset-0 bg-slate-950/60" onClick={onCloseMobile} />
-          <aside className="absolute inset-y-0 left-0 w-[260px] overflow-y-auto border-r border-line bg-nav">
-            <div className="flex h-16 items-center justify-between border-b border-line px-5">
-              <span className="flex items-center gap-2 font-bold">
-                <Activity aria-hidden className="h-5 w-5 text-fluid" /> ClathraRefine
-              </span>
-              <button onClick={onCloseMobile} aria-label="Close navigation" className="rounded p-1.5 text-muted hover:bg-elev">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            {nav(true)}
-          </aside>
-        </div>
-      )}
-    </>
+    <nav aria-label={`${tab.group} pages`} className="border-b border-line bg-nav lg:w-56 lg:shrink-0 lg:border-b-0 lg:border-r">
+      <ul className="flex gap-1 overflow-x-auto p-2 lg:sticky lg:top-28 lg:flex-col lg:p-3">
+        {tab.items.map((it) => {
+          const on = isActive(path, it.href);
+          return (
+            <li key={it.href}>
+              <Link
+                href={it.href}
+                aria-current={on ? "page" : undefined}
+                className={cx("flex items-center gap-2.5 whitespace-nowrap rounded-lg px-3 py-2 text-sm transition-colors duration-150", on ? "bg-primary-bg font-semibold text-primary-fg" : "text-muted hover:bg-elev hover:text-fg")}
+              >
+                <it.icon aria-hidden className="h-4 w-4 shrink-0" />
+                {it.label}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
+/** Active and unacknowledged alarms by priority, top right. */
+function AlarmCounters() {
+  const p = usePlant();
+  const live = p.alarms.filter((a) => a.state === "UNACK_ACTIVE" || a.state === "ACK_ACTIVE" || a.state === "RTN_UNACK");
+  const n = (pr: string) => live.filter((a) => a.priority === pr).length;
+  const items = [
+    { k: "critical", label: "Critical", cls: "bg-crit text-white" },
+    { k: "high", label: "High", cls: "bg-warn text-slate-950" },
+    { k: "medium", label: "Medium", cls: "bg-primary text-white" },
+    { k: "low", label: "Low", cls: "bg-slate text-white" },
+  ];
+  return (
+    <Link href="/app/alarms" aria-label={`Alarms: ${items.map((i) => `${n(i.k)} ${i.label.toLowerCase()}`).join(", ")}`} className="hidden items-center gap-1 sm:flex" data-testid="alarm-counters">
+      {items.map((i) => (
+        <span key={i.k} title={`${i.label} alarms`} className={cx("inline-flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 font-mono text-xs font-bold tabular", n(i.k) ? i.cls : "bg-elev text-muted")}>
+          {n(i.k)}
+        </span>
+      ))}
+    </Link>
   );
 }
 
@@ -140,13 +154,11 @@ function LinkStatus() {
   const mode = usePrefs((s) => s.mode);
   const ok = p.link.connected;
   return (
-    <div className="hidden items-center gap-2 text-xs xl:flex" aria-live="polite">
+    <div className="flex items-center gap-2" aria-live="polite">
       {ok ? <Wifi aria-hidden className="h-4 w-4 text-ok-fg" /> : <WifiOff aria-hidden className="h-4 w-4 text-crit-fg" />}
       <span>
-        <span className="font-semibold">{mode === "LIVE" ? "AWS IoT" : "Scenario"}</span> {ok ? "connected" : p.status.error ? "error" : "offline"}
-        <span className="block font-mono text-muted tabular">
-          {p.link.perMinute}/min · last {p.link.lastAt ? formatTime(p.link.lastAt).slice(0, 8) : "none"}
-        </span>
+        {mode === "LIVE" ? "AWS IoT" : "Scenario"} {ok ? "connected" : p.status.error ? "error" : "offline"}
+        <span className="ml-2 font-mono tabular">last {p.link.lastAt ? formatTime(p.link.lastAt).slice(0, 8) : "none"}</span>
       </span>
     </div>
   );
@@ -193,7 +205,7 @@ function ModeBadge() {
   const mode = usePrefs((s) => s.mode);
   if (!m) return null;
   return (
-    <span data-testid="mode-badge" className={cx("rounded-md border px-2 py-1 font-mono text-xs font-bold", mode === "LIVE" ? "border-ok/50 bg-ok-bg text-ok-fg" : "border-warn/50 bg-warn-bg text-warn-fg")}>
+    <span data-testid="mode-badge" className={cx("rounded-md border px-2 py-0.5 font-mono text-xs font-bold", mode === "LIVE" ? "border-ok/50 bg-ok-bg text-ok-fg" : "border-warn/50 bg-warn-bg text-warn-fg")}>
       {mode === "LIVE" ? <Radio aria-hidden className="mr-1 inline h-3.5 w-3.5" /> : <FlaskConical aria-hidden className="mr-1 inline h-3.5 w-3.5" />}
       {mode}
     </span>
@@ -248,9 +260,29 @@ function IdleTimer() {
   return me?.auth === "clerk" ? <IdleClerk onIdle={(fn) => setClerkOut(() => fn)} /> : null;
 }
 
+function Clock() {
+  const p = usePlant();
+  return <span className="font-mono tabular">{p.now ? formatTime(p.now) : ""}</span>;
+}
+
+/** Always-visible status bar: time, link, data mode, assistant. Preferences live here too. */
+function StatusBar() {
+  return (
+    <footer className="fixed inset-x-0 bottom-0 z-30 flex min-h-9 flex-wrap items-center gap-x-4 gap-y-1 border-t border-line bg-panel px-4 py-1 text-xs text-muted md:px-6" aria-label="Status">
+      <Clock />
+      <LinkStatus />
+      <ModeBadge />
+      <span className="inline-flex items-center gap-1">
+        <Bot aria-hidden className="h-3.5 w-3.5" /> AI assistant: On
+      </span>
+      <div className="ml-auto">
+        <Toggles />
+      </div>
+    </footer>
+  );
+}
+
 export function Shell({ children }: { children: ReactNode }) {
-  const [expanded, setExpanded] = useState(true);
-  const [mobile, setMobile] = useState(false);
   const setRate = usePrefs((s) => s.setRate);
   useEffect(() => {
     fetch("/api/settings")
@@ -259,34 +291,37 @@ export function Shell({ children }: { children: ReactNode }) {
       .catch(() => {});
   }, [setRate]);
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen flex-col pb-20">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:z-50 focus:rounded focus:bg-panel focus:p-2">
         Skip to content
       </a>
-      <Sidebar expanded={expanded} onToggle={() => setExpanded((e) => !e)} mobileOpen={mobile} onCloseMobile={() => setMobile(false)} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 border-b border-line bg-panel">
-          <div className="flex min-h-16 flex-wrap items-center gap-3 px-4 py-2 md:px-6">
-            <button onClick={() => setMobile(true)} aria-label="Open navigation" className="rounded p-2 text-muted hover:bg-elev lg:hidden">
-              <Menu className="h-5 w-5" />
-            </button>
-            <CommandPalette />
-            <ModeBadge />
-            <LinkStatus />
-            <div className="ml-auto flex flex-wrap items-center gap-2">
-              <Toggles />
-              <NotificationCentre />
-              <CartButton />
-              <ScramButton compact />
-              <UserMenu />
-            </div>
+      <header className="sticky top-0 z-30 border-b border-line bg-panel">
+        <div className="flex h-16 items-center gap-3 px-4 md:px-6">
+          <Link href="/app" className="flex shrink-0 items-center gap-2 font-semibold">
+            <Mark className="h-7 w-7" /> <span className="hidden sm:inline">ClathraRefine</span>
+          </Link>
+          <CommandPalette />
+          <div className="ml-auto flex items-center gap-2">
+            <AlarmCounters />
+            <NotificationCentre />
+            <CartButton />
+            <ScramButton />
+            <UserMenu />
           </div>
-          <AlarmBanner />
-        </header>
+        </div>
+        <div className="border-t border-line px-2 md:px-4">
+          <TabBar />
+        </div>
+        <AlarmBanner />
+      </header>
+      <div className="flex min-w-0 flex-1 flex-col lg:flex-row">
+        <SubMenu />
         <main id="main" className="min-w-0 flex-1">
           {children}
         </main>
       </div>
+      <StatusBar />
+      <AssistantLauncher />
       <CartDrawer />
       <IdleTimer />
     </div>

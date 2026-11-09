@@ -11,12 +11,12 @@ import { SYSTEM_PROMPT, TOOL_DECLARATIONS } from "../lib/assistantTools";
 export const step = action({
   args: { contents: v.array(v.any()) },
   returns: v.object({ text: v.optional(v.string()), calls: v.optional(v.array(v.object({ name: v.string(), args: v.any() }))), cached: v.boolean() }),
-  handler: async (ctx, { contents }) => {
+  handler: async (ctx, { contents }): Promise<{ text?: string; calls?: { name: string; args: unknown }[]; cached: boolean }> => {
     await requirePerm(ctx, "read");
     const key = process.env.GEMINI_API_KEY;
     if (!key) throw new Error("GEMINI_API_KEY is not set");
     const hash = await sha256(JSON.stringify(contents));
-    const hit = await ctx.runQuery(internal.assistantCache.get, { hash });
+    const hit: string | null = await ctx.runQuery(internal.assistantCache.get, { hash });
     if (hit) return { text: hit, cached: true };
 
     const ai = new GoogleGenAI({ apiKey: key });

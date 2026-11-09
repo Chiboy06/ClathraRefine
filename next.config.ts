@@ -26,14 +26,35 @@ const nextConfig: NextConfig = {
       "*.css": { loaders: ["@tailwindcss/turbopack"], as: "*.css" },
     },
   },
-  // Old console paths moved under /app (docs/MODIFICATION_MAP.md).
+  // Old paths moved twice: under /app (modification brief) and into the top tabs (remodification brief).
   async redirects() {
-    const moved = ["fleet", "devices/:p*", "events", "shift", "measurements", "departments", "reports", "relays", "alarms", "marketplace/:p*", "marketplace", "audits", "audit-history", "audit-log", "support", "admin"];
+    // Final home of every moved page, so no redirect chains.
+    const app: Record<string, string> = {
+      events: "/app/alarms/events",
+      "audit-log": "/app/alarms/audit",
+      shift: "/app/alarms/shift",
+      predict: "/app/ai/predictions",
+      connect: "/app/settings/connect",
+      admin: "/app/settings/users",
+      reports: "/app/history/export",
+      relays: "/app/plant",
+      measurements: "/app/history",
+      "marketplace/rfq": "/app/marketplace/orders",
+      "devices/:p*": "/app/maintenance",
+    };
+    const top: Record<string, string> = {
+      dashboard: "/app",
+      onboarding: "/app/settings/connect",
+      welcome: "/app/organisation",
+      ...app,
+    };
+    const sameUnderApp = ["fleet", "departments", "alarms", "marketplace/:p*", "marketplace", "audits", "audit-history", "support"];
+    const removed = ["product/:p*", "solutions/:p*", "company", "resources", "security"];
     return [
-      { source: "/dashboard", destination: "/app", permanent: true },
-      { source: "/onboarding", destination: "/app/connect", permanent: true },
-      { source: "/welcome", destination: "/app/organisation", permanent: true },
-      ...moved.map((m) => ({ source: `/${m}`, destination: `/app/${m}`, permanent: true })),
+      ...Object.entries(app).map(([k, v]) => ({ source: `/app/${k}`, destination: v, permanent: true })),
+      ...Object.entries(top).map(([k, v]) => ({ source: `/${k}`, destination: v, permanent: true })),
+      ...sameUnderApp.map((m) => ({ source: `/${m}`, destination: `/app/${m}`, permanent: true })),
+      ...removed.map((m) => ({ source: `/${m}`, destination: "/", permanent: true })),
     ];
   },
   async headers() {

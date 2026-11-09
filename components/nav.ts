@@ -1,71 +1,88 @@
 import {
-  BarChart3, Bell, Boxes, ClipboardCheck, ClipboardList, Cpu, Factory, FileClock, FileText, Gauge, History, LayoutDashboard, LifeBuoy,
-  Radio, ReceiptText, ScrollText, Settings, Store, ToggleRight, Network, TrendingUp, LineChart as LineChartIcon, Droplets, Building2,
+  Activity, Bell, Boxes, Bot, Box, BrainCircuit, CalendarRange, ClipboardCheck, ClipboardList, Cpu, Download, FileClock, FlaskConical, Gauge, GraduationCap, HeartPulse,
+  LayoutDashboard, LifeBuoy, LineChart as LineChartIcon, ListTree, MapPin, Network, Radio, ReceiptText, ScrollText, ShieldAlert, SlidersHorizontal, Store, Users, Workflow, Wind,
 } from "lucide-react";
 
 type NavItem = { href: string; label: string; icon: typeof Gauge };
-/** Navigation follows the product story: predict, prevent, capture, recover value. */
-export const NAV: { group: string; items: NavItem[] }[] = [
-  { group: "Overview", items: [
-    { href: "/app", label: "Dashboard", icon: LayoutDashboard },
+type Tab = { group: string; icon: typeof Gauge; items: NavItem[]; also?: string[] };
+
+/** Top tabs, each with a short left sub-menu. `also` lists unlisted pages that belong to the tab. */
+export const NAV: Tab[] = [
+  { group: "Overview", icon: LayoutDashboard, items: [
+    { href: "/app", label: "Plant overview", icon: LayoutDashboard },
     { href: "/app/fleet", label: "Fleet", icon: Network },
-    { href: "/app/devices/ESP32S3-N16R8-HARNESS-01", label: "Devices", icon: Cpu },
   ] },
-  { group: "Predict", items: [
-    { href: "/app/predict", label: "Hazard prediction", icon: TrendingUp },
-    { href: "/app/measurements#trend", label: "Trends", icon: LineChartIcon },
+  { group: "Monitoring", icon: Activity, items: [
+    { href: "/app/monitoring", label: "Devices and signals", icon: ListTree },
+    { href: "/app/monitoring/trends", label: "Live trends", icon: LineChartIcon },
   ] },
-  { group: "Prevent", items: [
-    { href: "/app/alarms", label: "Alarms and escalation", icon: Bell },
-    { href: "/app/relays", label: "Safety deck", icon: ToggleRight },
-    { href: "/app/events", label: "Event journal", icon: ScrollText },
-    { href: "/app/audit-log", label: "Audit trail", icon: FileClock },
-    { href: "/app/shift", label: "Shift log", icon: ClipboardList },
+  { group: "Plant", icon: Workflow, items: [
+    { href: "/app/plant", label: "Process diagram", icon: Workflow },
+    { href: "/app/plant/3d", label: "3D plant view", icon: Box },
   ] },
-  { group: "Capture", items: [
-    { href: "/app/measurements", label: "Mass balance", icon: Gauge },
-    { href: "/app/capture", label: "Solvent and scrubber", icon: Droplets },
-    { href: "/app/departments", label: "Departments and quota", icon: Factory },
+  { group: "History", icon: CalendarRange, also: ["/app/capture", "/app/departments"], items: [
+    { href: "/app/history", label: "CO2 and capture", icon: Wind },
+    { href: "/app/history/gas", label: "Gas safety", icon: ShieldAlert },
+    { href: "/app/history/alarms", label: "Alarms", icon: Bell },
+    { href: "/app/history/export", label: "Export", icon: Download },
   ] },
-  { group: "Marketplace", items: [
-    { href: "/app/marketplace", label: "Marketplace", icon: Store },
-    { href: "/app/marketplace/orders", label: "Orders", icon: ReceiptText },
-    { href: "/app/marketplace/rfq", label: "RFQs", icon: FileText },
+  { group: "Alarms", icon: Bell, items: [
+    { href: "/app/alarms", label: "Active", icon: Bell },
+    { href: "/app/alarms/tiers", label: "Escalation tiers", icon: SlidersHorizontal },
+    { href: "/app/alarms/events", label: "Event journal", icon: ScrollText },
+    { href: "/app/alarms/audit", label: "Audit trail", icon: FileClock },
+    { href: "/app/alarms/shift", label: "Shift log", icon: ClipboardList },
+  ] },
+  { group: "AI", icon: BrainCircuit, items: [
+    { href: "/app/ai", label: "Assistant", icon: Bot },
+    { href: "/app/ai/predictions", label: "Predictions", icon: BrainCircuit },
+    { href: "/app/ai/sensor-health", label: "Sensor health", icon: HeartPulse },
+    { href: "/app/ai/solvent", label: "Solvent forecast", icon: FlaskConical },
+    { href: "/app/ai/training", label: "Training mode", icon: GraduationCap },
+  ] },
+  { group: "Marketplace", icon: Store, items: [
+    { href: "/app/marketplace", label: "Catalogue", icon: Store },
+    { href: "/app/marketplace/orders", label: "Orders and RFQs", icon: ReceiptText },
     { href: "/app/marketplace/seller", label: "Seller centre", icon: Boxes },
   ] },
-  { group: "Compliance", items: [
-    { href: "/app/audits", label: "Audit workspace", icon: ClipboardCheck },
-    { href: "/app/audit-history", label: "Audit history", icon: History },
-    { href: "/app/reports", label: "Reports", icon: BarChart3 },
+  { group: "Settings", icon: SlidersHorizontal, also: ["/app/get-started", "/app/organisation"], items: [
+    { href: "/app/settings/connect", label: "Connect a device", icon: Radio },
+    { href: "/app/settings/site", label: "Site details", icon: MapPin },
+    { href: "/app/settings/sensors", label: "Sensors and calibration", icon: Gauge },
+    { href: "/app/settings/users", label: "Users and roles", icon: Users },
+    { href: "/app/settings/alarm-limits", label: "Alarm limits", icon: SlidersHorizontal },
   ] },
-  { group: "Support", items: [{ href: "/app/support", label: "Support desk", icon: LifeBuoy }] },
-  { group: "Settings", items: [
-    { href: "/app/connect", label: "Connect a device", icon: Radio },
-    { href: "/app/organisation", label: "Organisation", icon: Building2 },
-    { href: "/app/admin", label: "Users, tags and alarms", icon: Settings },
+  { group: "Maintenance", icon: Cpu, also: ["/app/audit-history", "/app/devices"], items: [
+    { href: "/app/maintenance", label: "Device health", icon: Cpu },
+    { href: "/app/audits", label: "Audits", icon: ClipboardCheck },
+    { href: "/app/support", label: "Support", icon: LifeBuoy },
   ] },
 ];
 
-/** Exact match for the dashboard, prefix match elsewhere, hash links never active. */
-export function isActive(path: string, href: string) {
-  if (href.includes("#")) return false;
-  if (href === "/app") return path === "/app";
-  if (href === "/app/marketplace") return path === href || path.startsWith("/app/marketplace/p/");
-  return path === href || path.startsWith(href + "/");
+const under = (path: string, href: string) => path === href || path.startsWith(href + "/");
+
+/** The sub-menu item for a path: the longest matching href. */
+export function activeHref(path: string): string | null {
+  const all = NAV.flatMap((t) => t.items.map((i) => i.href));
+  return all.filter((h) => under(path, h)).sort((a, b) => b.length - a.length)[0] ?? null;
 }
 
+export const isActive = (path: string, href: string) => activeHref(path) === href;
 
-const LABELS: Record<string, string> = Object.fromEntries(NAV.flatMap((g) => g.items.map((i) => [i.href.split("#")[0], i.label])));
+export function activeTab(path: string): Tab | undefined {
+  const h = activeHref(path);
+  return NAV.find((t) => t.items.some((i) => i.href === h) || t.also?.some((a) => under(path, a)));
+}
 
-/** Breadcrumbs from the path: App, then the nav group, then the page. */
+const LABELS: Record<string, string> = Object.fromEntries(NAV.flatMap((t) => t.items.map((i) => [i.href, i.label])));
+
+/** Breadcrumbs from the path: the tab, then the page. */
 export function crumbs(path: string): { href?: string; label: string }[] {
-  if (!path.startsWith("/app")) return [];
-  const out: { href?: string; label: string }[] = [{ href: "/app", label: "App" }];
-  if (path === "/app") return [{ label: "Dashboard" }];
-  const group = NAV.find((g) => g.items.some((i) => isActive(path, i.href)));
-  if (group) out.push({ label: group.group });
-  const base = Object.keys(LABELS).filter((h) => h !== "/app" && (path === h || path.startsWith(h + "/"))).sort((x, y) => y.length - x.length)[0];
-  if (base && base !== path) out.push({ href: base, label: LABELS[base] });
-  out.push({ label: base === path ? LABELS[base] : decodeURIComponent(path.split("/").pop() ?? "") });
+  const tab = activeTab(path);
+  if (!tab) return [];
+  const h = activeHref(path);
+  const out: { href?: string; label: string }[] = [{ href: tab.items[0].href, label: tab.group }];
+  if (h && h !== tab.items[0].href) out.push({ href: h, label: LABELS[h] });
+  if (h !== path) out.push({ label: decodeURIComponent(path.split("/").pop() ?? "") });
   return out;
 }

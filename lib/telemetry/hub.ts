@@ -9,6 +9,8 @@ import { relayOn } from "../fsm";
 import { STALE_MS } from "../quality";
 import { riskIndex, risePerSecond, sessionAnomalyZ } from "../predict";
 import type { Command } from "../fsm";
+import { convex } from "../convexClient";
+import { ConvexSource } from "./convexSource";
 
 export type Severity = "INFO" | "WARNING" | "CRITICAL" | "PASS" | "AUDIT";
 export type HubEvent = { id: string; at: number; severity: Severity; source: "board" | "app" | "demo"; tag: string; message: string };
@@ -44,9 +46,7 @@ export type Snapshot = {
   incidents: Incident[];
   events: HubEvent[];
   relayHistory: RelayChange[][];
-  relayMask: number; // with DEMO overrides applied
-  manualMode: boolean;
-  overrides: Record<number, { on: boolean; until: number }>;
+  relayMask: number;
   plant: Plant;
   leakActive: boolean;
   riskHistory: { t: number; risk: number }[];
@@ -145,8 +145,6 @@ class Hub {
       events: seedEvents(now),
       relayHistory: Array.from({ length: 6 }, () => []),
       relayMask: 0,
-      manualMode: false,
-      overrides: {},
       plant: plantAt(now, true),
       leakActive: false,
       riskHistory: [],
@@ -174,8 +172,9 @@ class Hub {
     if (this.source && this.snap.mode === mode) return;
     this.source?.stop();
     this.msgTimes = [];
-    this.set({ mode, latest: null, history: [], status: { connected: false }, overrides: {}, manualMode: false });
-    this.source = mode === "DEMO" ? this.scenario : new ApiPollingSource();
+    this.set({ mode, latest: null, history: [], status: { connected: false } });
+    // LIVE: Convex pushes readings when a deployment is configured; otherwise poll the API.
+    this.source = mode === "DEMO" ? this.scenario : convex ? new ConvexSource((ack) => this.addAck(ack)) : new ApiPollingSource();
     this.source.start(this.ingest, (status) => this.set({ status }));
     if (!this.ticker) this.ticker = setInterval(this.tick, 1000);
   }
@@ -185,14 +184,11 @@ class Hub {
     this.msgTimes = this.msgTimes.filter((t) => now - t < 60_000);
     const last = this.snap.latest;
     const stale = !last || now - last.receivedAt > STALE_MS;
-    // Expire DEMO relay overrides
-    const overrides = Object.fromEntries(Object.entries(this.snap.overrides).filter(([, o]) => o.until > now));
     this.updateAlarm("ALM-STALE", stale && !!last, 0, now, false);
     for (const a of this.alarmsMap.values()) this.alarmsMap.set(a.id, alarmReduce(a, { type: "tick", now, suppressed: !!last?.warming_up }));
     this.set({
       now,
-      overrides,
-      relayMask: this.applyOverrides(last?.relay_mask ?? 0, overrides),
+      relayMask: last?.relay_mask ?? 0,
       alarms: [...this.alarmsMap.values()],
       link: { connected: this.snap.status.connected && !stale, perMinute: this.msgTimes.length, lastAt: last?.receivedAt ?? null },
       plant: plantAt(now, !last || last.scrubber === "SCRUBBING" || this.snap.mode === "LIVE"),
@@ -203,11 +199,6 @@ class Hub {
     });
   };
 
-  private applyOverrides(mask: number, o: Snapshot["overrides"]) {
-    let m = mask;
-    for (const [k, v] of Object.entries(o)) m = v.on ? m | (1 << (Number(k) - 1)) : m & ~(1 << (Number(k) - 1));
-    return m;
-  }
 
   private updateAlarm(id: string, active: boolean, value: number, now: number, suppressed: boolean) {
     const prev = this.alarmsMap.get(id)!;
@@ -270,7 +261,7 @@ class Hub {
       latest: s,
       history,
       relayHistory,
-      relayMask: this.applyOverrides(s.relay_mask, this.snap.overrides),
+      relayMask: s.relay_mask,
       alarms: [...this.alarmsMap.values()],
       events: ev.length ? [...ev.map((e) => ({ ...e, id: uid() })).reverse(), ...this.snap.events].slice(0, 1000) : this.snap.events,
     });
@@ -332,16 +323,10 @@ class Hub {
     this.scenario.pressAck();
     this.addEvent({ severity: "INFO", source: "demo", tag: "HS-001", message: "Physical ACK button pressed (simulated)" });
   }
-  /** DEMO only: an approved override acts on the scenario's displayed relays. */
-  applyOverride(kind: string, target: string, value: number) {
-    const now = Date.now();
-    if (kind === "manual_mode") return this.set({ manualMode: value === 1 });
-    const relay = Number(target);
-    const on = kind === "pulse_test" ? !relayOn(this.snap.relayMask, relay) : value === 1;
-    const until = now + (kind === "pulse_test" ? 1500 : 60_000);
-    const overrides = { ...this.snap.overrides, [relay]: { on, until } };
-    const relayHistory = this.snap.relayHistory.map((h, i) => (i === relay - 1 ? [{ at: now, on, cause: kind === "pulse_test" ? "Pulse test (simulated)" : "Override (simulated, 60 s)" }, ...h].slice(0, 10) : h));
-    this.set({ overrides, relayHistory, relayMask: this.applyOverrides(this.snap.latest?.relay_mask ?? 0, overrides) });
+  /** DEMO only: an approved safety bypass acts on the scenario board until it expires. */
+  applyOverride(kind: string, _target: string, minutes: number) {
+    this.scenario.bypass(kind, minutes);
+    this.addEvent({ severity: "AUDIT", source: "demo", tag: kind === "siren_mute" ? "XA-206" : "HS-001", message: `Safety bypass ${kind.replace("_", " ")} approved for ${minutes} min (Demo)` });
   }
 }
 
@@ -365,8 +350,6 @@ export const EMPTY_SNAP: Snapshot = {
   events: [],
   relayHistory: Array.from({ length: 6 }, () => []),
   relayMask: 0,
-  manualMode: false,
-  overrides: {},
   plant: plantAt(0, true),
   leakActive: false,
   riskHistory: [],

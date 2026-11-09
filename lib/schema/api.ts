@@ -8,20 +8,21 @@ export const DataMode = z.enum(["LIVE", "DEMO"]);
 export const ScramBody = z.object({ mode: DataMode, confirm: z.literal(true) });
 export const PingBody = z.object({ mode: DataMode });
 
-export const OverrideKind = z.enum(["relay_override", "pulse_test", "manual_mode", "setting"]);
+// Two-person approval covers safety bypasses and protected settings only. Bypasses expire automatically.
+export const OverrideKind = z.enum(["siren_mute", "manual_extend", "setting"]);
 export const SETTINGS = ["display_warn_mv", "display_crit_mv", "usd_ngn_rate"] as const;
 
 export const OverrideBody = z
   .object({
     kind: OverrideKind,
-    target: text(40), // relay number "1".."6", "mode", or a setting name
+    target: text(40), // "siren", "manual", or a setting name
     value: z.number().finite(),
     reason: text(500),
     mode: DataMode,
     confirm: z.literal(true),
   })
   .refine((b) => b.kind !== "setting" || (SETTINGS as readonly string[]).includes(b.target), { message: "Unknown setting" })
-  .refine((b) => b.kind === "setting" || b.kind === "manual_mode" || /^[1-6]$/.test(b.target), { message: "Relay must be 1 to 6" })
+  .refine((b) => b.kind === "setting" || (Number.isInteger(b.value) && b.value >= 1 && b.value <= 60), { message: "Bypass expiry must be 1 to 60 minutes" })
   .refine((b) => b.target !== "usd_ngn_rate" || (b.value >= 100 && b.value <= 10_000), { message: "Rate out of range" });
 
 export const ApproveBody = z.object({ pin: z.string().min(4).max(12).regex(/^\d+$/), confirm: z.literal(true) });
@@ -91,3 +92,10 @@ export const AuditDraftBody = z.object({
 });
 
 export const UploadBody = z.object({ name: text(200), type: z.enum(["image/jpeg", "image/png", "image/tiff"]), size: z.number().int().positive().max(15_000_000) });
+
+/** Manual fan/pump/mode commands. The board applies its own interlocks and answers on cmd/ack. */
+export const CommandBody = z.discriminatedUnion("cmd", [
+  z.object({ cmd: z.literal("mode"), value: z.enum(["manual", "auto"]), mode: DataMode }),
+  z.object({ cmd: z.literal("fan"), value: z.enum(["on", "off"]), mode: DataMode }),
+  z.object({ cmd: z.literal("pump"), value: z.enum(["on", "off"]), mode: DataMode }),
+]);
