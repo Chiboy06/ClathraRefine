@@ -189,3 +189,23 @@ describe("training scenario", () => {
     expect(f[f.length - 1].trip).toBe(false);
   });
 });
+
+describe("assistant shift report", () => {
+  it("drafts from events", async () => {
+    const { ruleAnswer } = await import("./assistantTools");
+    const val = (value: number) => ({ value });
+    const d = {
+      view: { at: 1_700_000_000_000, reductionPct: val(91.8) },
+      trend: () => [],
+      alarms: [],
+      events: [{ at: 1_700_000_000_000, severity: "warn", tag: "AMB", message: "Ambient warning" }],
+      anomalyZ: null,
+      health: [],
+      solvent: { minutes: null, loadingPct: 20, ratioNow: 0.08 },
+    } as unknown as Parameters<typeof ruleAnswer>[1];
+    const r = ruleAnswer("draft the shift report", d);
+    expect(r).toMatch(/Draft shift report/);
+    expect(r).toMatch(/AMB: Ambient warning/);
+    expect(r).toMatch(/91\.8%/);
+  });
+});

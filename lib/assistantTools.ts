@@ -122,6 +122,10 @@ export function ruleAnswer(question: string, d: AssistantData): string {
   if (/replace|change.*solvent|new solvent/.test(q)) return `Replacing the solvent:\n${walk("walkthrough-replace-solvent")}`;
   if (/trip|reset/.test(q)) return `Responding to a trip:\n${walk("walkthrough-trip")}`;
   if (/warning|what (should|do) i do/.test(q)) return `Responding to a warning:\n${walk("walkthrough-warning")}`;
+  if (/shift|handover|hand over/.test(q)) {
+    const ev = d.events.slice(0, 12).map((e) => `- ${t(e.at)} ${e.tag}: ${e.message}`).join("\n");
+    return `Draft shift report ${at}\nState: ${d.alarms.length ? `${d.alarms.length} active alarm(s)` : "no active alarms"}; CO2 reduction ${num(v.reductionPct.value, 1)}%; ${solventMessage(d)}\nEvents this shift:\n${ev || "- None recorded"}\nCheck and sign it in Alarms › Shift log.`;
+  }
   if (/outlet/.test(q)) return `Outlet CO2 is ${num(v.co2OutPpm.value)} ppm (${num(v.co2OutPpm.value / 10_000, 2)}% Vol) ${at}.`;
   if (/inlet/.test(q)) return `Inlet CO2 is ${num(v.co2InPpm.value)} ppm (${num(v.co2InPpm.value / 10_000, 2)}% Vol) ${at}.`;
   if (/reduction|efficien/.test(q)) return `CO2 reduction is ${num(v.reductionPct.value, 1)}%: inlet ${num(v.co2InPpm.value)} ppm, outlet ${num(v.co2OutPpm.value)} ppm ${at}.`;

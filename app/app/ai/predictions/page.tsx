@@ -1,4 +1,5 @@
 "use client";
+import { anomalyReason } from "@/lib/analytics";
 import { useMemo } from "react";
 import { BrainCircuit, Siren } from "lucide-react";
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
@@ -152,6 +153,7 @@ export default function Predict() {
               <>
                 <div className="mb-4 flex flex-wrap gap-2" aria-live="polite">
                   <Badge tone={warnIn === null ? "neutral" : "warn"}>{warnIn === null ? "Warning: no crossing in 30 s" : warnIn === 0 ? "Warning threshold reached" : `Predicted crossing in ${warnIn} s: warning`}</Badge>
+                  {critIn !== null && critIn > 0 && <Badge tone="crit">Hazard level in {critIn} s</Badge>}
                   <Badge tone={critIn === null ? "neutral" : "crit"}>{critIn === null ? "Trip: no crossing in 30 s" : critIn === 0 ? "Trip threshold reached" : `Predicted crossing in ${critIn} s: trip`}</Badge>
                 </div>
                 <div className="h-72 w-full">
@@ -190,6 +192,11 @@ export default function Predict() {
                 <Mono className="text-4xl font-semibold">{anomalyZ === null ? "–" : num(anomalyZ, 1)}</Mono>
                 <span className="text-sm text-muted">threshold {num(threshold, 1)}</span>
               </div>
+              {l && anomalyZ !== null && (
+                <p className="mt-2 text-sm font-semibold" data-testid="anomaly-reason">
+                  {anomalyReason({ risePerS: rise ?? 0, baselineRisePerS: 1, mv: l.ambient_mv, normalTop: FW.AMB_WARN_OFF_MV, hourUtc: new Date(p.now).getUTCHours() })}
+                </p>
+              )}
               <p className="mt-1 text-sm text-muted">{anomalyZ === null ? "Collecting a clean-air baseline for this session." : hasModel && mode === "LIVE" ? "Robust z-score of level and 10 s rise from the trained detector." : "Robust z-score against this session's clean-air readings."}</p>
               <div className="mt-6">
                 {anomalies.length ? (
