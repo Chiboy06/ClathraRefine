@@ -8,7 +8,7 @@ import { Mimic, type Layers } from "@/components/mimic";
 import { usePlant } from "@/lib/telemetry/usePlant";
 import { getHub } from "@/lib/telemetry/hub";
 import { plantView, type PlantView } from "@/lib/plantView";
-import { ARM_MS, sbo, type Action, type Equipment, type Sbo } from "@/lib/sbo";
+import { ARM_MS, sbo, type Action, type Sbo } from "@/lib/sbo";
 import { can } from "@/lib/roleMatrix";
 import { FW } from "@/lib/process";
 

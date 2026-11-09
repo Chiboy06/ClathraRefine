@@ -24,7 +24,9 @@ export type Coll =
   | "settings"
   | "ledger"
   | "uploads"
-  | "leads";
+  | "leads"
+  | "training"
+  | "sensors";
 
 export type Item = Record<string, unknown> & { id: string; created_at: number };
 

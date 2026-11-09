@@ -1,28 +1,18 @@
 "use client";
 import { useState } from "react";
-import { DatabaseZap, Landmark, UserCog } from "lucide-react";
+import { DatabaseZap, Landmark } from "lucide-react";
 import { Badge, Button, Card, Empty, ErrorNote, Field, inputCls, LoadingPanel, Notice, Page, SimTag, Table, Td, postJson, useFetch } from "@/components/ui";
 import { Mono, useMe } from "@/components/scada";
 import { OverrideRequestModal, PendingApprovals, type OverrideSpec } from "@/components/safety";
 import { useMoney } from "@/components/market";
 import { ROLES } from "@/lib/roleMatrix";
-import { TAGS } from "@/lib/tags";
 import { usePrefs } from "@/lib/store";
-import { FW } from "@/lib/process";
 import type { Product } from "@/lib/demoData";
 
 type U = { id: string; name: string; email?: string; role: string };
 type RoleReq = { id: string; user_id: string; user_name: string; company: string; org_type: string; site: string; requested_role: string; status: string };
 type Site = { id: string; name: string; thing: string; region: string; real: boolean };
 
-const ALARM_DEFS = [
-  { id: "ALM-AT101-HIHI", tag: "AT-101", pri: "critical", set: `≥ ${FW.AMB_CRIT_ON_MV} mV`, clear: `≤ ${FW.AMB_CRIT_OFF_MV} mV`, src: "Firmware level CRITICAL" },
-  { id: "ALM-AT101-HI", tag: "AT-101", pri: "high", set: `≥ ${FW.AMB_WARN_ON_MV} mV`, clear: `≤ ${FW.AMB_WARN_OFF_MV} mV`, src: "Firmware level WARNING" },
-  { id: "ALM-HS001", tag: "HS-001", pri: "critical", set: "scram = true", clear: "ACK at board", src: "Telemetry flag" },
-  { id: "ALM-TRIP", tag: "XA-206", pri: "high", set: "trip_latched = true", clear: "ACK at board when NORMAL", src: "Telemetry flag" },
-  { id: "ALM-SENSOR", tag: "AT-101", pri: "high", set: "sensor_fault or < 100 mV", clear: "Reading restored", src: "Telemetry flag" },
-  { id: "ALM-STALE", tag: "HS-001", pri: "medium", set: "No reading for 10 s", clear: "Next reading", src: "Dashboard" },
-];
 
 export default function Admin() {
   const { me } = useMe();
@@ -52,7 +42,7 @@ export default function Admin() {
   const isAdmin = me?.session?.role === "admin";
 
   return (
-    <Page title="Administration" subtitle="Users and roles, sites and devices, tags, alarm definitions, exchange rate and marketplace moderation.">
+    <Page title="Administration" subtitle="Users and roles, sites and devices, the exchange rate and marketplace moderation.">
       {me && !isAdmin && <Notice tone="warn">Admin role required for most actions here. The server enforces this.</Notice>}
       {msg && (msg.ok ? <Notice tone="ok">{msg.t}</Notice> : <ErrorNote>{msg.t}</ErrorNote>)}
 
@@ -179,37 +169,6 @@ export default function Admin() {
         )}
       </Card>
 
-      <Card title="Alarm definitions">
-        <Table head={["Alarm", "Tag", "Priority", "Set", "Clear", "Source"]} caption="Alarm definitions">
-          {ALARM_DEFS.map((a) => (
-            <tr key={a.id}>
-              <Td mono>{a.id}</Td>
-              <Td mono>{a.tag}</Td>
-              <Td>{a.pri}</Td>
-              <Td mono>{a.set}</Td>
-              <Td mono>{a.clear}</Td>
-              <Td>{a.src}</Td>
-            </tr>
-          ))}
-        </Table>
-      </Card>
-
-      <Card title="Tag list (ISA-5.1)" actions={<UserCog aria-hidden className="h-4 w-4 text-muted" />}>
-        <Table head={["Tag", "Name", "Unit", "Range", "Limits", "Source"]} caption="Tag list">
-          {TAGS.map((t) => (
-            <tr key={t.id}>
-              <Td mono>{t.id}</Td>
-              <Td>{t.name}</Td>
-              <Td>{t.unit}</Td>
-              <Td mono>
-                {t.min} to {t.max}
-              </Td>
-              <Td mono>{[t.lo !== undefined && `L ${t.lo}`, t.hi !== undefined && `H ${t.hi}`, t.hihi !== undefined && `HH ${t.hihi}`].filter(Boolean).join(" · ") || "-"}</Td>
-              <Td>{t.source === "board" ? <Badge tone="ok">Board</Badge> : <SimTag />}</Td>
-            </tr>
-          ))}
-        </Table>
-      </Card>
       <OverrideRequestModal spec={spec} onClose={() => setSpec(null)} onDone={() => setN((x) => x + 1)} />
     </Page>
   );

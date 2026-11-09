@@ -120,7 +120,7 @@ describe("board interlocks", () => {
   it("manual mode, fan then pump, auto returns on gas", () => {
     let b = ready();
     expect(boardCommand(b, { cmd: "fan", value: "on" }, 1).reason).toBe("Manual mode required");
-    let r = boardCommand(b, { cmd: "mode", value: "manual" }, 1);
+    const r = boardCommand(b, { cmd: "mode", value: "manual" }, 1);
     expect(r.accepted).toBe(true);
     b = r.state;
     expect(boardCommand(b, { cmd: "pump", value: "on" }, 2).reason).toBe("Fan must be on before the pump");
@@ -174,5 +174,18 @@ describe("ingest", () => {
     expect(d.capture_g_min).toBeGreaterThan(0);
     expect(d.quality).toBe("Good");
     expect(deriveTelemetry({ ...row, sensor_fault: true }, 1000).quality).toBe("Bad");
+  });
+});
+
+import { DECISIONS, trainingFrames } from "./training";
+
+describe("training scenario", () => {
+  it("each decision point matches the board state it asks about", () => {
+    const f = trainingFrames();
+    const at = (s: number) => f.find((x) => x.s === s)!;
+    expect(at(DECISIONS[0].at).level).toBe("WARNING");
+    expect(at(DECISIONS[1].at).trip).toBe(true);
+    expect(at(DECISIONS[2].at)).toMatchObject({ level: "NORMAL", trip: true });
+    expect(f[f.length - 1].trip).toBe(false);
   });
 });
