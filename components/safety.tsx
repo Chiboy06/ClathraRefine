@@ -115,7 +115,7 @@ export function ScramButton() {
           phase === "confirm" ? "border-crit bg-crit ring-4 ring-crit/40" : "border-crit bg-crit hover:bg-crit/90",
         )}
       >
-        <span aria-hidden className={cx("absolute inset-y-0 left-0 bg-white/25", phase === "holding" ? "w-full transition-[width] duration-1000 ease-linear" : "w-0")} />
+        <span aria-hidden className={cx("absolute inset-y-0 left-0 bg-white/25 motion-safe", phase === "holding" ? "w-full transition-[width] duration-1000 ease-linear" : "w-0")} />
         <OctagonX aria-hidden className="relative h-4 w-4" />
         <span className="relative">{label}</span>
       </button>

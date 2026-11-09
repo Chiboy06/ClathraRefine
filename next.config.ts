@@ -3,13 +3,24 @@ import type { NextConfig } from "next";
 const dev = process.env.NODE_ENV !== "production";
 
 // Clerk loads its UI from its own frontend API host; Paystack is a full-page redirect so needs no CSP entry.
+// Convex needs https + wss on *.convex.cloud (WebSocket reactive queries) and https on *.convex.site (HTTP actions).
+// Clerk bot-protection probes go to *.client.protect.clerk.com on non-standard ports.
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${dev ? " 'unsafe-eval'" : ""} https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https://img.clerk.com",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://*.amazonaws.com",
+  [
+    "connect-src 'self'",
+    "https://*.clerk.accounts.dev",
+    "https://*.clerk.com",
+    "https://*.client.protect.clerk.com",
+    "https://*.amazonaws.com",
+    "https://*.convex.cloud",
+    "wss://*.convex.cloud",
+    "https://*.convex.site",
+  ].join(" "),
   "frame-src https://challenges.cloudflare.com https://*.clerk.accounts.dev",
   "worker-src 'self' blob:",
   "object-src 'none'",

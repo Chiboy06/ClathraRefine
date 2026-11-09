@@ -22,8 +22,13 @@ function TabBar() {
   const path = usePathname();
   const tab = activeTab(path);
   return (
-    <nav aria-label="Sections" className="flex min-w-0 flex-1 overflow-x-auto">
-      <ul className="flex items-stretch gap-1">
+    // Fade mask on the right edge signals that more tabs are scrollable on narrow viewports.
+    <nav
+      aria-label="Sections"
+      className="relative flex min-w-0 flex-1 overflow-x-auto"
+      style={{ maskImage: "linear-gradient(to right, black calc(100% - 2.5rem), transparent)", WebkitMaskImage: "linear-gradient(to right, black calc(100% - 2.5rem), transparent)" }}
+    >
+      <ul className="flex items-stretch gap-1 pr-10">
         {NAV.map((t) => {
           const on = tab?.group === t.group;
           return (
@@ -80,14 +85,14 @@ function AlarmCounters() {
   const items = [
     { k: "critical", label: "Critical", cls: "bg-crit text-white" },
     { k: "high", label: "High", cls: "bg-warn text-slate-950" },
-    { k: "medium", label: "Medium", cls: "bg-primary text-white" },
-    { k: "low", label: "Low", cls: "bg-slate text-white" },
+    { k: "medium", label: "Medium", cls: "bg-primary text-white", hideXs: true },
+    { k: "low", label: "Low", cls: "bg-slate text-white", hideXs: true },
   ];
   return (
-    <Link href="/app/alarms" className="relative hidden items-center gap-1 sm:flex" data-testid="alarm-counters">
+    <Link href="/app/alarms" className="relative flex items-center gap-1" data-testid="alarm-counters">
       <span className="sr-only">Alarms:</span>
       {items.map((i) => (
-        <span key={i.k} title={`${i.label} alarms`} className={cx("inline-flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 font-mono text-xs font-bold tabular", n(i.k) ? i.cls : "bg-elev text-muted")}>
+        <span key={i.k} title={`${i.label} alarms`} className={cx("inline-flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 font-mono text-xs font-bold tabular", (i as { hideXs?: boolean }).hideXs ? "hidden sm:inline-flex" : "inline-flex", n(i.k) ? i.cls : "bg-elev text-muted")}>
           {n(i.k)}
           <span className="sr-only"> {i.label.toLowerCase()},</span>
         </span>
@@ -117,7 +122,10 @@ function UserMenu() {
       </Link>
     );
   return (
-    <div className="relative">
+    <div
+      className="relative"
+      onKeyDown={(e) => e.key === "Escape" && setOpen(false)}
+    >
       <button onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="menu" className="flex items-center gap-2 rounded-md border border-line px-3 py-1.5 text-sm hover:bg-elev">
         <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-bg text-xs font-bold text-primary-fg">{s.name.slice(0, 1)}</span>
         <span className="hidden text-left xl:block">
@@ -172,13 +180,15 @@ function AlarmBanner() {
   if (!top) return null;
   const crit = top.priority === "critical";
   return (
-    <Link href="/app/alarms" role="alert" className={cx("flex items-center gap-2 border-b px-4 py-2 text-sm font-semibold md:px-6", crit ? "border-crit/60 bg-crit-bg text-crit-fg" : "border-warn/50 bg-warn-bg text-warn-fg")}>
-      <AlarmClock aria-hidden className="h-4 w-4 shrink-0" />
-      <span className="uppercase">{top.priority}</span>
-      <span className="font-mono">{top.tag}</span>
-      <span className="truncate">{top.message}</span>
-      <span className="ml-auto whitespace-nowrap rounded bg-panel/40 px-2 font-mono">{count} unacknowledged</span>
-    </Link>
+    <div role="alert" aria-live="assertive" className={cx("border-b", crit ? "border-crit/60 bg-crit-bg" : "border-warn/50 bg-warn-bg")}>
+      <Link href="/app/alarms" className={cx("flex items-center gap-2 px-4 py-2 text-sm font-semibold md:px-6", crit ? "text-crit-fg" : "text-warn-fg")}>
+        <AlarmClock aria-hidden className="h-4 w-4 shrink-0" />
+        <span className="uppercase">{top.priority}</span>
+        <span className="font-mono">{top.tag}</span>
+        <span className="truncate">{top.message}</span>
+        <span className="ml-auto whitespace-nowrap rounded bg-panel/40 px-2 font-mono">{count} unacknowledged</span>
+      </Link>
+    </div>
   );
 }
 

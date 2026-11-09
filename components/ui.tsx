@@ -75,7 +75,7 @@ export function Card({ title, actions, children, className, tone, help }: { titl
       {(title || actions) && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           {title && (
-            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted">
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-fg">
               {title}
               {help && <Help label={`About ${typeof title === "string" ? title : "this card"}`}>{help}</Help>}
             </h2>
@@ -244,19 +244,42 @@ export function Field({ label, hint, children, id }: { label: string; hint?: Rea
 export const inputCls = "min-h-10 w-full rounded-lg border border-line bg-elev px-3 py-2 text-sm text-fg placeholder:text-muted";
 
 export function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; label: string }) {
+  // Uses role="group" + aria-pressed toggle buttons with roving tabindex so keyboard
+  // users navigate with arrow keys (correct pattern) rather than Tab through every option.
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const btns = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>("button"));
+    const idx = btns.indexOf(document.activeElement as HTMLButtonElement);
+    if (idx === -1) return;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+      e.preventDefault();
+      const next = btns[(idx + 1) % btns.length];
+      next.focus();
+      onChange(options[(idx + 1) % options.length].value);
+    } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+      e.preventDefault();
+      const prev = btns[(idx - 1 + btns.length) % btns.length];
+      prev.focus();
+      onChange(options[(idx - 1 + options.length) % options.length].value);
+    }
+  };
   return (
-    <div role="radiogroup" aria-label={label} className="inline-flex flex-wrap rounded-md border border-line bg-elev p-0.5">
-      {options.map((o) => (
-        <button
-          key={o.value}
-          role="radio"
-          aria-checked={value === o.value}
-          onClick={() => onChange(o.value)}
-          className={cx("rounded px-2.5 py-1 text-xs font-semibold transition-colors duration-150", value === o.value ? "bg-panel text-fg shadow-sm" : "text-muted hover:text-fg")}
-        >
-          {o.label}
-        </button>
-      ))}
+    <div role="group" aria-label={label} className="inline-flex flex-wrap rounded-md border border-line bg-elev p-0.5" onKeyDown={handleKeyDown}>
+      {options.map((o) => {
+        const selected = value === o.value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="button"
+            aria-pressed={selected}
+            tabIndex={selected ? 0 : -1}
+            onClick={() => onChange(o.value)}
+            className={cx("rounded px-2.5 py-1 text-xs font-semibold transition-colors duration-150", selected ? "bg-panel text-fg shadow-sm" : "text-muted hover:text-fg")}
+          >
+            {o.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

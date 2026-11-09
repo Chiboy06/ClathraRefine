@@ -140,11 +140,23 @@ dialog::backdrop {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  /* Kill decorative motion only. Safety-critical feedback (SCRAM hold bar, flow-line) is
+     excluded so operators always get confirmation that a hold gesture is registering. */
+  *:not(.motion-safe),
+  *:not(.motion-safe)::before,
+  *:not(.motion-safe)::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+  /* Preserve the flow-line data-flow indicator as a static dash pattern */
+  .flow-line {
+    animation: none;
+    stroke-dasharray: 6 6;
+  }
+}
+
+/* Applied to safety-critical animated elements so reduced-motion does not suppress them. */
+.motion-safe {
+  /* Intentionally empty: presence of the class exempts the element from the reduced-motion kill above. */
 }
