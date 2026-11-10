@@ -6,6 +6,54 @@ import { IngestAck, IngestTelemetry, classify, deriveTelemetry, isAwsEnableUrl, 
 const http = httpRouter();
 
 /**
+ * Clerk webhook: syncs user.created and user.updated into the users table.
+ * Verified with svix using CLERK_WEBHOOK_SECRET set on the Convex deployment.
+ */
+http.route({
+  path: "/clerk-webhook",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    const secret = process.env.CLERK_WEBHOOK_SECRET;
+    if (!secret) return new Response("CLERK_WEBHOOK_SECRET not set", { status: 500 });
+
+    // Verify the svix signature.
+    const { Webhook } = await import("svix");
+    const wh = new Webhook(secret);
+    const headers = {
+      "svix-id": req.headers.get("svix-id") ?? "",
+      "svix-timestamp": req.headers.get("svix-timestamp") ?? "",
+      "svix-signature": req.headers.get("svix-signature") ?? "",
+    };
+    const body = await req.text();
+    let evt: { type: string; data: Record<string, unknown> };
+    try {
+      evt = wh.verify(body, headers) as unknown as { type: string; data: Record<string, unknown> };
+    } catch {
+      return new Response("Invalid signature", { status: 400 });
+    }
+
+    if (evt.type !== "user.created" && evt.type !== "user.updated") {
+      return new Response(null, { status: 200 });
+    }
+
+    const d = evt.data;
+    const clerkId = String(d.id);
+    const firstName = String(d.first_name ?? "");
+    const lastName = String(d.last_name ?? "");
+    const name = [firstName, lastName].filter(Boolean).join(" ") || String(d.username ?? clerkId);
+    const emails = d.email_addresses as { email_address: string; id: string }[] | undefined;
+    const primaryId = d.primary_email_address_id as string | undefined;
+    const email = emails?.find((e) => e.id === primaryId)?.email_address;
+    const meta = d.public_metadata as { role?: string } | undefined;
+    const role = typeof meta?.role === "string" ? meta.role : "viewer";
+    const createdAt = typeof d.created_at === "number" ? d.created_at : Date.now();
+    const updatedAt = typeof d.updated_at === "number" ? d.updated_at : Date.now();
+
+    await ctx.runMutation((internal as unknown as { users: { upsert: unknown } }).users.upsert as Parameters<typeof ctx.runMutation>[0], { clerkId, name, email, role, createdAt, updatedAt });
+    return new Response(null, { status: 200 });
+  }),
+});
+/**
  * AWS IoT rule HTTPS action target. Telemetry, events and cmd/ack are posted here with header x-ingest-key.
  * Rule SQL: SELECT *, topic(2) AS device, topic() AS topic FROM 'clathrarefine/+/telemetry' (and /events, /cmd/ack).
  */

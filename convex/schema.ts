@@ -67,4 +67,13 @@ export default defineSchema({
   records: defineTable({ coll: v.string(), key: v.string(), created_at: v.number(), data: v.any() }).index("by_coll_key", ["coll", "key"]),
   /** Assistant answer cache so the free tier is not spent twice on the same question. */
   assistantCache: defineTable({ hash: v.string(), answer: v.string(), at: v.number() }).index("by_hash", ["hash"]).index("by_at", ["at"]),
+  /** Users synced from Clerk via webhook. Keyed by Clerk userId. */
+  users: defineTable({
+    clerkId: v.string(),
+    name: v.string(),
+    email: v.optional(v.string()),
+    role: v.string(),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_clerk_id", ["clerkId"]),
 });

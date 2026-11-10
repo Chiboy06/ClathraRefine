@@ -237,23 +237,19 @@ function CartButton() {
 }
 
 const IDLE_MS = 30 * 60_000;
-function IdleClerk({ onIdle }: { onIdle: (fn: () => Promise<void>) => void }) {
-  const clerk = useClerk();
-  useEffect(() => {
-    onIdle(() => clerk.signOut({ redirectUrl: "/sign-in?reason=idle" }));
-  }, [clerk, onIdle]);
-  return null;
-}
+
 /** 30-minute idle timeout on console pages. */
 function IdleTimer() {
   const { me } = useMe();
-  const [clerkOut, setClerkOut] = useState<null | (() => Promise<void>)>(null);
+  const clerk = useClerk();
+
   useEffect(() => {
     if (!me?.session) return;
     let t: ReturnType<typeof setTimeout>;
     const out = async () => {
-      if (clerkOut) await clerkOut();
-      else {
+      if (me.auth === "clerk") {
+        await clerk.signOut({ redirectUrl: "/sign-in?reason=idle" });
+      } else {
         await fetch("/api/demo-login", { method: "DELETE" });
         // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload drops in-memory session state after sign-out
         window.location.assign("/sign-in?reason=idle");
@@ -270,8 +266,11 @@ function IdleTimer() {
       clearTimeout(t);
       evs.forEach((e) => window.removeEventListener(e, reset));
     };
-  }, [me?.session, clerkOut]);
-  return me?.auth === "clerk" ? <IdleClerk onIdle={(fn) => setClerkOut(() => fn)} /> : null;
+  // clerk is a stable object from useClerk; me.auth and me.session.userId are the real dependencies.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [me?.auth, me?.session?.userId]);
+
+  return null;
 }
 
 function Clock() {

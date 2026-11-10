@@ -17,6 +17,7 @@ import type * as maintenance from "../maintenance.js";
 import type * as records from "../records.js";
 import type * as store from "../store.js";
 import type * as telemetry from "../telemetry.js";
+import type * as users from "../users.js";
 
 import type {
   ApiFromModules,
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   records: typeof records;
   store: typeof store;
   telemetry: typeof telemetry;
+  users: typeof users;
 }>;
 
 /**
