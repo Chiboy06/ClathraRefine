@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { SignOutButton, useClerk } from "@clerk/nextjs";
-import { AlarmClock, Bot, FlaskConical, LogOut, Moon, Radio, ShoppingCart, Sun, Wifi, WifiOff } from "lucide-react";
+import { AlarmClock, Bot, LogOut, Moon, Radio, ShoppingCart, Sun, Wifi, WifiOff } from "lucide-react";
 import { Mark } from "./mark";
 import { AssistantLauncher } from "./assistant";
 import { NAV, activeTab, isActive } from "./nav";
@@ -194,14 +194,13 @@ function AlarmBanner() {
 
 function Toggles() {
   const m = useMounted();
-  const { unit, currency, theme, mode, setUnit, setCurrency, setTheme, setMode } = usePrefs();
+  const { unit, currency, theme, setUnit, setCurrency, setTheme } = usePrefs();
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
   if (!m) return <div className="h-8 w-64" aria-hidden />;
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Segmented label="Data mode" value={mode} onChange={setMode} options={[{ value: "DEMO", label: "DEMO" }, { value: "LIVE", label: "LIVE" }]} />
       <Segmented label="Concentration unit" value={unit} onChange={setUnit} options={[{ value: "PCT", label: "Vol %" }, { value: "PPM", label: "PPM" }]} />
       <Segmented label="Currency" value={currency} onChange={setCurrency} options={[{ value: "NGN", label: "₦ NGN" }, { value: "USD", label: "$ USD" }]} />
       <button onClick={() => setTheme(theme === "night" ? "day" : "night")} aria-label={`${theme === "night" ? "Night" : "Day"} theme, switch to ${theme === "night" ? "Day" : "Night"}`} className="inline-flex min-h-8 items-center gap-1.5 rounded-md border border-line bg-elev px-2.5 text-xs font-semibold">
@@ -215,11 +214,12 @@ function Toggles() {
 function ModeBadge() {
   const m = useMounted();
   const mode = usePrefs((s) => s.mode);
-  if (!m) return null;
+  if (!m || mode === "LIVE") return null;
+  // Only show the badge when in DEMO mode so operators know data is simulated
   return (
-    <span data-testid="mode-badge" className={cx("rounded-md border px-2 py-0.5 font-mono text-xs font-bold", mode === "LIVE" ? "border-ok/50 bg-ok-bg text-ok-fg" : "border-warn/50 bg-warn-bg text-warn-fg")}>
-      {mode === "LIVE" ? <Radio aria-hidden className="mr-1 inline h-3.5 w-3.5" /> : <FlaskConical aria-hidden className="mr-1 inline h-3.5 w-3.5" />}
-      {mode}
+    <span data-testid="mode-badge" className="rounded-md border border-warn/50 bg-warn-bg px-2 py-0.5 font-mono text-xs font-bold text-warn-fg">
+      <Radio aria-hidden className="mr-1 inline h-3.5 w-3.5" />
+      SCENARIO
     </span>
   );
 }

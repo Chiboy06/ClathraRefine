@@ -1,6 +1,7 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
+import { Webhook } from "svix";
 import { IngestAck, IngestTelemetry, classify, deriveTelemetry, isAwsEnableUrl, keyMatches } from "../lib/ingest";
 
 const http = httpRouter();
@@ -17,7 +18,6 @@ http.route({
     if (!secret) return new Response("CLERK_WEBHOOK_SECRET not set", { status: 500 });
 
     // Verify the svix signature.
-    const { Webhook } = await import("svix");
     const wh = new Webhook(secret);
     const headers = {
       "svix-id": req.headers.get("svix-id") ?? "",
@@ -27,7 +27,8 @@ http.route({
     const body = await req.text();
     let evt: { type: string; data: Record<string, unknown> };
     try {
-      evt = wh.verify(body, headers) as unknown as { type: string; data: Record<string, unknown> };
+      wh.verify(body, headers);
+      evt = JSON.parse(body) as { type: string; data: Record<string, unknown> };
     } catch {
       return new Response("Invalid signature", { status: 400 });
     }
@@ -44,12 +45,13 @@ http.route({
     const emails = d.email_addresses as { email_address: string; id: string }[] | undefined;
     const primaryId = d.primary_email_address_id as string | undefined;
     const email = emails?.find((e) => e.id === primaryId)?.email_address;
-    const meta = d.public_metadata as { role?: string } | undefined;
+    const meta = d.public_metadata as { role?: string; orgId?: string } | undefined;
     const role = typeof meta?.role === "string" ? meta.role : "viewer";
+    const orgId = typeof meta?.orgId === "string" ? meta.orgId : undefined;
     const createdAt = typeof d.created_at === "number" ? d.created_at : Date.now();
     const updatedAt = typeof d.updated_at === "number" ? d.updated_at : Date.now();
 
-    await ctx.runMutation((internal as unknown as { users: { upsert: unknown } }).users.upsert as Parameters<typeof ctx.runMutation>[0], { clerkId, name, email, role, createdAt, updatedAt });
+    await ctx.runMutation(internal.users.upsert, { clerkId, name, email, role, orgId, createdAt, updatedAt });
     return new Response(null, { status: 200 });
   }),
 });

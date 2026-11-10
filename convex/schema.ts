@@ -73,7 +73,8 @@ export default defineSchema({
     name: v.string(),
     email: v.optional(v.string()),
     role: v.string(),
+    orgId: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
-  }).index("by_clerk_id", ["clerkId"]),
+  }).index("by_clerk_id", ["clerkId"]).index("by_org", ["orgId"]),
 });

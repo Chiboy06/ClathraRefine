@@ -1,11 +1,10 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, FlaskConical, Loader2, Radio } from "lucide-react";
+import { Check, Loader2, Radio } from "lucide-react";
 import { Button, Card, ErrorNote, Field, inputCls, Notice, Page, postJson, cx } from "@/components/ui";
 import { useMe } from "@/components/scada";
 import { ConnectDevice } from "@/components/connect";
-import { usePrefs } from "@/lib/store";
 import { usePlant } from "@/lib/telemetry/usePlant";
 import { formatTime } from "@/lib/format";
 
@@ -14,9 +13,8 @@ const STEPS = ["Create your account", "Set up your organisation", "Add your firs
 export default function GetStarted() {
   const router = useRouter();
   const { me } = useMe();
-  const setMode = usePrefs((s) => s.setMode);
   const p = usePlant();
-  const [step, setStep] = useState(1); // 0 is done at sign-up
+  const [step, setStep] = useState(1);
   const [org, setOrg] = useState({ company: "", org_type: "plant operator", site: "", requested_role: "operator" });
   const [site, setSite] = useState({ facility: "", station: "", region: "eu-west-1", endpoint: "", thing: "", topic: "" });
   const [busy, setBusy] = useState(false);
@@ -34,10 +32,6 @@ export default function GetStarted() {
       setBusy(false);
     }
   };
-  const useDemo = () => {
-    setMode("DEMO");
-    router.push("/app");
-  };
   const waiting = step === 4;
   const firstReading = waiting && p.mode === "LIVE" ? p.latest : null;
 
@@ -45,11 +39,6 @@ export default function GetStarted() {
     <Page
       title="Get started"
       subtitle={`Welcome${me?.session ? `, ${me.session.name}` : ""}. Five short steps from sign-up to live readings.`}
-      actions={
-        <Button onClick={useDemo} data-testid="use-demo-plant">
-          <FlaskConical aria-hidden className="h-4 w-4" /> Use demo plant
-        </Button>
-      }
     >
       <ol className="grid grid-cols-2 gap-2 md:grid-cols-6" aria-label="Setup progress">
         {STEPS.map((s, i) => (
@@ -138,10 +127,7 @@ export default function GetStarted() {
           <div className="flex flex-wrap gap-3">
             <Button
               variant="primary"
-              onClick={() => {
-                setMode("LIVE");
-                setStep(4);
-              }}
+              onClick={() => setStep(4)}
             >
               <Radio aria-hidden className="h-4 w-4" /> The device is powered, wait for data
             </Button>
@@ -168,12 +154,7 @@ export default function GetStarted() {
                 <Loader2 aria-hidden className="h-5 w-5 animate-spin" /> Listening for telemetry from AWS IoT Core. The board sends a reading every 2 s once Wi-Fi and MQTT connect.
               </div>
               {p.status.error && <Notice tone="warn">{p.status.error}. Check the board&apos;s Wi-Fi, the endpoint and that the certificate is active.</Notice>}
-              <p className="text-sm text-muted">Not ready yet? Explore with the demo plant and connect later from Settings.</p>
-              <div>
-                <Button onClick={useDemo}>
-                  <FlaskConical aria-hidden className="h-4 w-4" /> Use demo plant
-                </Button>
-              </div>
+              <p className="text-sm text-muted">Not ready yet? You can connect later from Settings.</p>
             </div>
           )}
         </Card>

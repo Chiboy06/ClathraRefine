@@ -14,7 +14,7 @@ import { ppmFromMv } from "@/lib/mq135";
 import { briefing, predictionMessage, ruleAnswer, runTool, solventMessage, type AssistantData } from "@/lib/assistantTools";
 import { formatTime } from "@/lib/format";
 
-export type Msg = { id: number; role: "user" | "assistant"; text: string; at: number; source?: "gemini" | "rules"; kind?: "alert" | "briefing" };
+export type Msg = { id: number; role: "user" | "assistant"; text: string; at: number; source?: "gemini" | "grok" | "rules"; kind?: "alert" | "briefing" };
 
 type Store = { msgs: Msg[]; open: boolean; unread: number; busy: boolean; push: (m: Omit<Msg, "id" | "at">) => void; setOpen: (o: boolean) => void; setBusy: (b: boolean) => void };
 let nextId = 1;
@@ -66,8 +66,8 @@ export function assistantData(snap: Snapshot): AssistantData {
 
 type Content = { role: "user" | "model"; parts: Record<string, unknown>[] };
 
-/** Asks Gemini (through Convex, key stays on the server) with tools run here; falls back to rules if unavailable. */
-async function answer(question: string, signedInWithClerk: boolean): Promise<{ text: string; source: "gemini" | "rules" }> {
+/** Asks Gemini or Grok (through Convex, key stays on the server) with tools run here; falls back to rules if unavailable. */
+async function answer(question: string, signedInWithClerk: boolean): Promise<{ text: string; source: "gemini" | "grok" | "rules" }> {
   const d = assistantData(getHub().getSnapshot());
   if (convex && signedInWithClerk) {
     try {
@@ -83,7 +83,7 @@ async function answer(question: string, signedInWithClerk: boolean): Promise<{ t
         contents.push({ role: "user", parts: r.calls.map((c) => ({ functionResponse: { name: c.name, response: { result: runTool(c.name, c.args as Record<string, unknown>, d) } } })) });
       }
     } catch {
-      // free-tier limits or no key: fall through to the rule-based answer, never block the console
+      // free-tier limits or no key: fall through to the rule-based answer
     }
   }
   return { text: ruleAnswer(question, d), source: "rules" };
@@ -152,7 +152,7 @@ export function Conversation({ compact }: { compact?: boolean }) {
             {m.text}
             <div className={cx("mt-1 text-[10px]", m.role === "user" ? "text-white/80" : "text-muted")}>
               {formatTime(m.at)}
-              {m.role === "assistant" && ` · ${m.kind === "briefing" ? "Briefing" : m.kind === "alert" ? "Alert" : m.source === "gemini" ? "Gemini" : "Rules"} · advisory`}
+              {m.role === "assistant" && ` · ${m.kind === "briefing" ? "Briefing" : m.kind === "alert" ? "Alert" : m.source === "gemini" ? "Gemini AI" : m.source === "grok" ? "Grok AI" : "Rules"} · advisory`}
             </div>
           </div>
         ))}

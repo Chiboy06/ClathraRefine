@@ -1,4 +1,4 @@
-import { getSession } from "@/lib/server/auth";
+import { getSession, clerkEnabled } from "@/lib/server/auth";
 import { parseBody } from "@/lib/server/http";
 import { OrgBody } from "@/lib/schema/api";
 import { newId, put } from "@/lib/server/db";
@@ -11,8 +11,16 @@ export async function POST(req: Request) {
   const b = await parseBody(req, OrgBody);
   if (!b.ok) return b.res;
   const at = Date.now();
-  const item = { id: newId(at), created_at: at, ...b.data, user_id: s.userId, user_name: s.name, current_role: s.role, status: "pending" };
+  const item = { id: newId(at), created_at: at, ...b.data, user_id: s.userId, user_name: s.name, orgId: s.orgId, current_role: s.role, status: "pending" };
   await put("role_requests", item);
   await audit(s, "role_request", b.data.requested_role, "pending", b.data.company);
+  // If this is the user's first org setup, write orgId to their Clerk metadata
+  if (s.orgId === undefined && clerkEnabled()) {
+    const { clerkClient } = await import("@clerk/nextjs/server");
+    const c = await clerkClient();
+    const u = await c.users.getUser(s.userId);
+    const newOrgId = item.id; // use the role_request id as the org anchor
+    await c.users.updateUserMetadata(s.userId, { publicMetadata: { ...(u.publicMetadata as object), orgId: newOrgId } });
+  }
   return Response.json(item);
 }

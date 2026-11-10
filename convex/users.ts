@@ -9,6 +9,7 @@ export const upsert = internalMutation({
     name: v.string(),
     email: v.optional(v.string()),
     role: v.string(),
+    orgId: v.optional(v.string()),
     createdAt: v.number(),
     updatedAt: v.number(),
   },
@@ -23,6 +24,7 @@ export const upsert = internalMutation({
         name: args.name,
         email: args.email,
         role: args.role,
+        orgId: args.orgId,
         updatedAt: args.updatedAt,
       });
     } else {
@@ -32,11 +34,19 @@ export const upsert = internalMutation({
   },
 });
 
-/** Look up the current user's own record. Used by queries that need the role without a JWT claim. */
+/** Look up the current user's own record. */
 export const me = query({
   args: {},
   returns: v.union(
-    v.object({ clerkId: v.string(), name: v.string(), email: v.optional(v.string()), role: v.string(), createdAt: v.number(), updatedAt: v.number() }),
+    v.object({
+      clerkId: v.string(),
+      name: v.string(),
+      email: v.optional(v.string()),
+      role: v.string(),
+      orgId: v.optional(v.string()),
+      createdAt: v.number(),
+      updatedAt: v.number(),
+    }),
     v.null(),
   ),
   handler: async (ctx) => {
@@ -47,6 +57,8 @@ export const me = query({
       .query("users")
       .withIndex("by_clerk_id", (q) => q.eq("clerkId", identity.subject))
       .unique();
-    return user ? { clerkId: user.clerkId, name: user.name, email: user.email, role: user.role, createdAt: user.createdAt, updatedAt: user.updatedAt } : null;
+    return user
+      ? { clerkId: user.clerkId, name: user.name, email: user.email, role: user.role, orgId: user.orgId, createdAt: user.createdAt, updatedAt: user.updatedAt }
+      : null;
   },
 });
