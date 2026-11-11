@@ -29,7 +29,7 @@ export function CtaLink({ href, children, variant = "primary", testId }: { href:
 const LINKS = [
   { href: "/pricing", label: "Pricing" },
   { href: "/contact", label: "Contact" },
-  { href: "/app", label: "Demo plant" },
+  { href: "/app", label: "Console" },
 ];
 
 /** Signed-in visitors see "Open app" instead of "Sign in". */
@@ -98,7 +98,6 @@ export function SiteFooter() {
             <Mark className="h-6 w-6" /> ClathraRefine
           </Link>
           <p className="mt-3 max-w-xs text-sm text-muted">Hazard prediction and gas leak prevention with carbon capture.</p>
-          <p className="mt-6 max-w-xs text-xs text-muted">CO2 readings come from low-cost MQ-135 sensors and are indicative. Carbon tokens and certificates are Demo, with Target standards, not certified claims.</p>
         </div>
         {cols.map((c) => (
           <nav key={c.h} aria-label={c.h}>

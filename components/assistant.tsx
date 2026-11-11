@@ -11,7 +11,7 @@ import { usePlant } from "@/lib/telemetry/usePlant";
 import { plantView, sensorsHealth, solventOutlook } from "@/lib/plantView";
 import { sessionAnomalyZ } from "@/lib/predict";
 import { ppmFromMv } from "@/lib/mq135";
-import { briefing, predictionMessage, ruleAnswer, runTool, solventMessage, type AssistantData } from "@/lib/assistantTools";
+import { briefing, captureMessage, captureReport, predictionMessage, ruleAnswer, runTool, solventMessage, type AssistantData } from "@/lib/assistantTools";
 import { formatTime } from "@/lib/format";
 
 export type Msg = { id: number; role: "user" | "assistant"; text: string; at: number; source?: "gemini" | "grok" | "rules"; kind?: "alert" | "briefing" };
@@ -61,6 +61,7 @@ export function assistantData(snap: Snapshot): AssistantData {
     anomalyZ: sessionAnomalyZ(snap.history.map((h) => h.ambient_mv)),
     health: sensorsHealth(snap),
     solvent: { minutes: solvent.minutes, loadingPct: snap.solventLoadingPct, ratioNow: solvent.now },
+    capture: captureReport(snap.history),
   };
 }
 
@@ -77,7 +78,7 @@ async function answer(question: string, signedInWithClerk: boolean): Promise<{ t
           convex.action(api.assistant.step, { contents }),
           new Promise<never>((_, rej) => setTimeout(() => rej(new Error("timeout")), 15_000)),
         ]);
-        if (r.text) return { text: r.text, source: "gemini" };
+        if (r.text) return { text: r.text, source: r.provider ?? "gemini" };
         if (!r.calls?.length) break;
         contents.push({ role: "model", parts: r.calls.map((c) => ({ functionCall: { name: c.name, args: c.args } })) });
         contents.push({ role: "user", parts: r.calls.map((c) => ({ functionResponse: { name: c.name, response: { result: runTool(c.name, c.args as Record<string, unknown>, d) } } })) });
@@ -104,7 +105,7 @@ export async function ask(question: string) {
 /** Proactive alerts on alarms, predicted crossings, sensor health and solvent, plus a briefing every 15 minutes. */
 function useProactive() {
   const p = usePlant();
-  const seen = useRef<{ events: Set<string>; crit: boolean; health: string; solvent: boolean; briefedAt: number }>({ events: new Set(), crit: false, health: "", solvent: false, briefedAt: 0 });
+  const seen = useRef<{ events: Set<string>; crit: boolean; health: string; solvent: boolean; capture: string; briefedAt: number }>({ events: new Set(), crit: false, health: "", solvent: false, capture: "ok", briefedAt: 0 });
   useEffect(() => {
     if (!p.ready || !p.latest) return;
     const push = useAssistant.getState().push;
@@ -128,6 +129,9 @@ function useProactive() {
     const low = d.solvent.minutes !== null && d.solvent.minutes < 30;
     if (low && !s.solvent) push({ role: "assistant", kind: "alert", source: "rules", text: solventMessage(d) });
     s.solvent = low;
+    const cap = d.capture.deterioration?.status ?? "ok";
+    if (cap !== "ok" && cap !== s.capture) push({ role: "assistant", kind: "alert", source: "rules", text: captureMessage(d) });
+    s.capture = cap;
     if (p.now - s.briefedAt >= 15 * 60_000) {
       s.briefedAt = p.now;
       push({ role: "assistant", kind: "briefing", source: "rules", text: briefing(d) });

@@ -11,7 +11,10 @@ export async function POST(req: Request) {
   const b = await parseBody(req, OrgBody);
   if (!b.ok) return b.res;
   const at = Date.now();
-  const item = { id: newId(at), created_at: at, ...b.data, user_id: s.userId, user_name: s.name, orgId: s.orgId, current_role: s.role, status: "pending" };
+  const id = newId(at);
+  // A first request founds the organisation: its id becomes the orgId, so the request is visible to that org's admins.
+  const orgId = s.orgId ?? id;
+  const item = { id, created_at: at, ...b.data, user_id: s.userId, user_name: s.name, orgId, current_role: s.role, status: "pending" };
   await put("role_requests", item);
   await audit(s, "role_request", b.data.requested_role, "pending", b.data.company);
   // If this is the user's first org setup, write orgId to their Clerk metadata
@@ -19,8 +22,7 @@ export async function POST(req: Request) {
     const { clerkClient } = await import("@clerk/nextjs/server");
     const c = await clerkClient();
     const u = await c.users.getUser(s.userId);
-    const newOrgId = item.id; // use the role_request id as the org anchor
-    await c.users.updateUserMetadata(s.userId, { publicMetadata: { ...(u.publicMetadata as object), orgId: newOrgId } });
+    await c.users.updateUserMetadata(s.userId, { publicMetadata: { ...(u.publicMetadata as object), orgId } });
   }
   return Response.json(item);
 }

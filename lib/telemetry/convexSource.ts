@@ -3,7 +3,8 @@ import { convex } from "../convexClient";
 import type { Sample, SourceStatus, TelemetrySource } from "./types";
 import type { Ack } from "./hub";
 
-const THING = "ESP32S3-N16R8-HARNESS-01";
+// The board this dashboard watches. Set NEXT_PUBLIC_THING_NAME on Vercel when your thing has another name.
+const THING = process.env.NEXT_PUBLIC_THING_NAME || "ESP32S3-N16R8-HARNESS-01";
 
 /** LIVE through Convex: reactive queries push new readings and command acks, no polling. Needs Clerk sign-in. */
 export class ConvexSource implements TelemetrySource {

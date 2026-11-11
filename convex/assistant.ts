@@ -10,8 +10,8 @@ import { SYSTEM_PROMPT, TOOL_DECLARATIONS } from "../lib/assistantTools";
 // Tools run in the browser against the plant data the operator sees.
 export const step = action({
   args: { contents: v.array(v.any()) },
-  returns: v.object({ text: v.optional(v.string()), calls: v.optional(v.array(v.object({ name: v.string(), args: v.any() }))), cached: v.boolean() }),
-  handler: async (ctx, { contents }): Promise<{ text?: string; calls?: { name: string; args: unknown }[]; cached: boolean }> => {
+  returns: v.object({ text: v.optional(v.string()), calls: v.optional(v.array(v.object({ name: v.string(), args: v.any() }))), cached: v.boolean(), provider: v.optional(v.union(v.literal("gemini"), v.literal("grok"))) }),
+  handler: async (ctx, { contents }): Promise<{ text?: string; calls?: { name: string; args: unknown }[]; cached: boolean; provider?: "gemini" | "grok" }> => {
     await requirePerm(ctx, "read");
     const hash = await sha256(JSON.stringify(contents));
     const hit: string | null = await ctx.runQuery(internal.assistantCache.get, { hash });
@@ -23,10 +23,10 @@ export const step = action({
     if (geminiKey) {
       const result = await runGemini(geminiKey, contents);
       if (result) {
-        if (result.calls?.length) return { calls: result.calls, cached: false };
+        if (result.calls?.length) return { calls: result.calls, cached: false, provider: "gemini" };
         if (result.text) {
           await ctx.runMutation(internal.assistantCache.set, { hash, answer: result.text });
-          return { text: result.text, cached: false };
+          return { text: result.text, cached: false, provider: "gemini" };
         }
       }
     }
@@ -34,10 +34,10 @@ export const step = action({
     if (grokKey) {
       const result = await runGrok(grokKey, contents);
       if (result) {
-        if (result.calls?.length) return { calls: result.calls, cached: false };
+        if (result.calls?.length) return { calls: result.calls, cached: false, provider: "grok" };
         if (result.text) {
           await ctx.runMutation(internal.assistantCache.set, { hash, answer: result.text });
-          return { text: result.text, cached: false };
+          return { text: result.text, cached: false, provider: "grok" };
         }
       }
     }

@@ -129,9 +129,14 @@ export class ScenarioSource implements TelemetrySource {
     const pump = relayOn(this.board.relayMask, 2);
     const inPpm = this.gasSource ? 8000 + wobble(this.t, 250, 23) : 450 + wobble(this.t, 10, 23);
     const load = this.loadingPct / 100;
-    const ratio = fan && pump ? 0.08 + 0.92 / (1 + Math.exp(-(load - 0.8) * 10)) : 0.97;
+    // Operating conditions drift slowly, so the capture model has variation to learn from:
+    // more solvent per litre of gas and a cooler solvent both raise removal.
+    const gasLpm = fan ? 1.0 + 0.2 * Math.sin(this.t / 90) + wobble(this.t, 0.03, 5) : 0;
+    const liquidLpm = pump ? 0.4 + 0.08 * Math.sin(this.t / 140) + wobble(this.t, 0.01, 7) : 0;
+    const solventC = 27 + 2 * Math.sin(this.t / 200) + wobble(this.t, 0.4, 41) + (pump ? 1.2 : 0);
+    const conditions = gasLpm > 0 ? Math.min(1.6, Math.max(0.6, ((liquidLpm / gasLpm) / 0.4) ** 0.7 * (1 - 0.03 * (solventC - 28)))) : 1;
+    const ratio = fan && pump ? Math.min(0.97, (0.08 + 0.92 / (1 + Math.exp(-(load - 0.8) * 10))) / conditions) : 0.97;
     const outPpm = inPpm * ratio;
-    const gasLpm = fan ? 1.0 + wobble(this.t, 0.03, 5) : 0;
     if (fan && pump) this.loadedG = Math.min(solventCapacityGPerL() * this.solventL * 1.6, this.loadedG + captureGPerMin(gasLpm, inPpm, outPpm) * (TICK_MS / 60_000));
     this.emit?.(
       toSample(this.board, {
@@ -142,8 +147,8 @@ export class ScenarioSource implements TelemetrySource {
         co2InMv: mvForPpm(inPpm),
         co2OutMv: mvForPpm(outPpm),
         gasLpm: +gasLpm.toFixed(2),
-        liquidLpm: pump ? +(0.4 + wobble(this.t, 0.01, 7)).toFixed(2) : 0,
-        solventC: +(27 + wobble(this.t, 0.4, 41) + (pump ? 1.2 : 0)).toFixed(1),
+        liquidLpm: +liquidLpm.toFixed(2),
+        solventC: +solventC.toFixed(1),
         ph: +Math.max(8.2, 12.4 - 2.2 * load).toFixed(2),
       }),
     );

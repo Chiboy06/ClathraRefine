@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { CheckCircle2, Copy, PlugZap, Save } from "lucide-react";
+import { CheckCircle2, PlugZap, Save } from "lucide-react";
+import { AwsSetupGuide } from "./awsSetup";
 import { Badge, Button, ErrorNote, Field, Notice, Page, cx, inputCls, postJson } from "./ui";
 import { useMe } from "./scada";
 import { usePlant } from "@/lib/telemetry/usePlant";
@@ -19,7 +20,6 @@ const SENSORS = [
   { id: "flow", label: "Flow meters", pin: "Not assigned" },
   { id: "temp_ph", label: "Temperature and pH", pin: "Not assigned" },
 ];
-const ingestUrl = process.env.NEXT_PUBLIC_CONVEX_SITE_URL ? `${process.env.NEXT_PUBLIC_CONVEX_SITE_URL}/ingest` : null;
 
 function Step({ n, title, done, children }: { n: number; title: string; done?: boolean; children: React.ReactNode }) {
   return (
@@ -41,7 +41,6 @@ export function ConnectDevice({ embedded = false }: { embedded?: boolean }) {
   const [fitted, setFitted] = useState<string[]>(["mq2_ambient", "mq2_exhaust", "mq135_in", "mq135_out"]);
   const [saveMsg, setSaveMsg] = useState<{ ok: boolean; t: string } | null>(null);
   const [test, setTest] = useState<{ state: "idle" | "testing" | "ok" | "fail"; text?: string }>({ state: "idle" });
-  const [copied, setCopied] = useState(false);
   // Readings newer than the last one present when the page opened.
   const [openedAt] = useState(() => p.history.at(-1)?.receivedAt ?? 0);
   const firstData = p.history.filter((h) => h.receivedAt > openedAt).length;
@@ -80,7 +79,7 @@ export function ConnectDevice({ embedded = false }: { embedded?: boolean }) {
   };
 
   const body = (
-    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_22rem]">
+    <div className="flex flex-col gap-8">
       <form onSubmit={save} className="flex flex-col gap-4">
         <Step n={1} title="Site name and location">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -151,39 +150,11 @@ export function ConnectDevice({ embedded = false }: { embedded?: boolean }) {
           </div>
         </Step>
       </form>
-      <aside className="h-fit rounded-2xl border border-line bg-panel p-5 text-sm xl:sticky xl:top-36" aria-label="AWS IoT rule checklist">
-        <h2 className="mb-3 font-semibold">AWS IoT rule checklist</h2>
-        <ol className="flex list-decimal flex-col gap-2 pl-5 text-muted">
-          <li>
-            In AWS IoT Core › Message routing › Rules, create a rule with SQL:
-            <code className="mt-1 block rounded bg-elev p-2 font-mono text-xs text-fg">SELECT *, topic(2) AS device, topic() AS topic FROM &apos;clathrarefine/+/telemetry&apos;</code>
-          </li>
-          <li>Add rules for <span className="font-mono">clathrarefine/+/events</span> and <span className="font-mono">clathrarefine/+/cmd/ack</span>, or one rule each.</li>
-          <li>
-            Action: HTTPS to
-            {ingestUrl ? (
-              <span className="mt-1 flex items-center gap-2">
-                <code className="break-all rounded bg-elev p-1.5 font-mono text-xs text-fg">{ingestUrl}</code>
-                <button type="button" aria-label="Copy ingest URL" onClick={() => navigator.clipboard.writeText(ingestUrl).then(() => setCopied(true))} className="rounded p-1 hover:bg-elev">
-                  <Copy aria-hidden className="h-4 w-4" />
-                </button>
-                {copied && <span className="text-xs text-ok-fg">Copied</span>}
-              </span>
-            ) : (
-              <span className="block text-warn-fg">Convex is not configured on this build.</span>
-            )}
-          </li>
-          <li>
-            Add header <span className="font-mono">x-ingest-key</span> with the value of <span className="font-mono">INGEST_KEY</span> from the Convex dashboard. It is never shown in this app.
-          </li>
-          <li>Confirm the destination: AWS sends a confirmation request that the ingest endpoint accepts on its own.</li>
-          <li>Keep the S3 archive action for model training.</li>
-        </ol>
-      </aside>
+      <AwsSetupGuide thing={f.thing} region={f.region} />
     </div>
   );
   return embedded ? body : (
-    <Page title="Connect a device" subtitle="Register the device, then check the link and the first readings.">
+    <Page title="Connect a device" subtitle="Register the device, connect your AWS account, then check the first readings.">
       {body}
     </Page>
   );

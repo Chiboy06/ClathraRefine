@@ -5,7 +5,7 @@ import { HeroCurve } from "@/components/heroCurve";
 import { CAPABILITIES, SITE } from "@/lib/siteContent";
 
 export const metadata: Metadata = {
-  title: { absolute: `${SITE.name}: see gas hazards coming, stop leaks at the source` },
+  title: { absolute: `${SITE.name}: safer plants, captured carbon, new revenue` },
   description: SITE.description,
   alternates: { canonical: "/" },
 };
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 const STORY = [
   { id: "predict", h: "Predict", line: "Know a leak is coming 30 seconds before the alarm.", shot: { src: "/images/product/predict.png", alt: "Predictions page with a risk index and a 30 second forecast line crossing the trip threshold ahead of the reading" } },
   { id: "prevent", h: "Prevent", line: "The controller on site trips, sounds the siren and extracts in milliseconds, with or without the cloud.", shot: { src: "/images/product/alarms.png", alt: "Alarms page with active alarms by priority and the event journal" } },
-  { id: "capture", h: "Capture", line: "Extracted gas goes through a solvent scrubber, not into the air.", shot: { src: "/images/product/plant.png", alt: "Live process diagram of the capture skid with inlet and outlet CO2, fan, pump and solvent tank" } },
+  { id: "capture", h: "Capture", line: "Extracted gas goes through a solvent scrubber, not into the air. AI learns what drives removal and flags solvent ageing or flow problems before output drops.", shot: { src: "/images/product/plant.png", alt: "Live process diagram of the capture skid with inlet and outlet CO2, fan, pump and solvent tank" } },
   { id: "recover", h: "Recover value", line: "Sell what you capture, with the production data behind every lot.", shot: { src: "/images/product/marketplace.png", alt: "Marketplace catalogue with captured CO2 and by-product listings" } },
 ] as const;
 
@@ -24,17 +24,17 @@ export default function Home() {
     <>
       <section className="pb-16 pt-14 md:pb-24 md:pt-20">
         <Container>
-          <h1 className="max-w-4xl text-[clamp(2.5rem,6vw,4.5rem)] font-semibold leading-[1.02] tracking-[-0.035em] [text-wrap:balance]">See gas hazards coming. Stop leaks at the source.</h1>
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted md:text-xl">Predict a gas hazard before the alarm, act on site in milliseconds, capture the CO2 and sell it.</p>
+          <h1 className="max-w-4xl text-[clamp(2.5rem,6vw,4.5rem)] font-semibold leading-[1.02] tracking-[-0.035em] [text-wrap:balance]">Turn hazardous gas into captured carbon and new revenue.</h1>
+          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted md:text-xl">ClathraRefine fits a safety controller and a CO2 scrubber to your plant, then uses AI to predict leaks, keep capture at its best and sell what you capture.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <CtaLink href="/contact">Book a demo</CtaLink>
             <CtaLink href="/app" variant="secondary">
-              Explore the demo plant <ArrowRight aria-hidden className="h-4 w-4" />
+              Open the console <ArrowRight aria-hidden className="h-4 w-4" />
             </CtaLink>
           </div>
           <div className="mt-12 rounded-3xl border border-line bg-panel p-4 md:p-8">
             <HeroCurve />
-            <p className="mt-2 text-sm text-muted">Illustration from the demo scenario: the forecast reaches the trip line first, so extraction starts early.</p>
+            <p className="mt-2 text-sm text-muted">The forecast reaches the trip line before the reading does, so extraction starts early.</p>
           </div>
         </Container>
       </section>

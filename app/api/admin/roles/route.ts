@@ -13,7 +13,7 @@ export async function GET() {
   const gate = await requirePerm("admin");
   if (!gate.ok) return gate.res;
   const orgId = gate.session.orgId;
-  // Only show role requests for this org
+  // An org admin sees their own organisation. A platform admin (no orgId) sees every organisation.
   const allRequests = await list("role_requests", 200);
   const requests = orgId ? allRequests.filter((r: Record<string, unknown>) => r.orgId === orgId) : allRequests;
   let users: { id: string; name: string; email?: string; role: string }[];

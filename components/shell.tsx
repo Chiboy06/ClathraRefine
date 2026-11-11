@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { SignOutButton, useClerk } from "@clerk/nextjs";
+import { SignOutButton } from "@clerk/nextjs";
 import { AlarmClock, Bot, LogOut, Moon, Radio, ShoppingCart, Sun, Wifi, WifiOff } from "lucide-react";
 import { Mark } from "./mark";
 import { AssistantLauncher } from "./assistant";
@@ -92,7 +92,7 @@ function AlarmCounters() {
     <Link href="/app/alarms" className="relative flex items-center gap-1" data-testid="alarm-counters">
       <span className="sr-only">Alarms:</span>
       {items.map((i) => (
-        <span key={i.k} title={`${i.label} alarms`} className={cx("inline-flex h-7 min-w-7 items-center justify-center rounded-md px-1.5 font-mono text-xs font-bold tabular", (i as { hideXs?: boolean }).hideXs ? "hidden sm:inline-flex" : "inline-flex", n(i.k) ? i.cls : "bg-elev text-muted")}>
+        <span key={i.k} title={`${i.label} alarms`} className={cx("h-7 min-w-7 items-center justify-center rounded-md px-1.5 font-mono text-xs font-bold tabular", (i as { hideXs?: boolean }).hideXs ? "hidden sm:inline-flex" : "inline-flex", n(i.k) ? i.cls : "bg-elev text-muted")}>
           {n(i.k)}
           <span className="sr-only"> {i.label.toLowerCase()},</span>
         </span>
@@ -229,7 +229,7 @@ function CartButton() {
   const n = useCart((s) => s.lines.length);
   const setOpen = useCart((s) => s.setOpen);
   return (
-    <button onClick={() => setOpen(true)} aria-label={`Open cart, ${m ? n : 0} items`} className="relative rounded-md border border-line p-2 hover:bg-elev">
+    <button onClick={() => setOpen(true)} aria-label={`Open cart, ${m ? n : 0} items`} className="relative hidden rounded-md border border-line p-2 hover:bg-elev sm:block">
       <ShoppingCart aria-hidden className="h-4 w-4" />
       {m && n > 0 && <span className="absolute -right-1.5 -top-1.5 rounded-full bg-shop px-1.5 text-[10px] font-bold text-slate-950">{n}</span>}
     </button>
@@ -241,14 +241,14 @@ const IDLE_MS = 30 * 60_000;
 /** 30-minute idle timeout on console pages. */
 function IdleTimer() {
   const { me } = useMe();
-  const clerk = useClerk();
+  // window.Clerk, not useClerk: the hook throws on builds without Clerk keys (local demo and e2e).
 
   useEffect(() => {
     if (!me?.session) return;
     let t: ReturnType<typeof setTimeout>;
     const out = async () => {
       if (me.auth === "clerk") {
-        await clerk.signOut({ redirectUrl: "/sign-in?reason=idle" });
+        await (window as { Clerk?: { signOut: (o: { redirectUrl: string }) => Promise<void> } }).Clerk?.signOut({ redirectUrl: "/sign-in?reason=idle" });
       } else {
         await fetch("/api/demo-login", { method: "DELETE" });
         // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload drops in-memory session state after sign-out
@@ -266,7 +266,7 @@ function IdleTimer() {
       clearTimeout(t);
       evs.forEach((e) => window.removeEventListener(e, reset));
     };
-  // clerk is a stable object from useClerk; me.auth and me.session.userId are the real dependencies.
+  // me.auth and me.session.userId are the real dependencies; the me object is new on every fetch.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [me?.auth, me?.session?.userId]);
 
@@ -309,12 +309,12 @@ export function Shell({ children }: { children: ReactNode }) {
         Skip to content
       </a>
       <header className="sticky top-0 z-30 border-b border-line bg-panel">
-        <div className="flex h-16 items-center gap-3 px-4 md:px-6">
+        <div className="flex h-16 items-center gap-2 px-3 sm:gap-3 sm:px-4 md:px-6">
           <Link href="/app" className="flex shrink-0 items-center gap-2 font-semibold">
             <Mark className="h-7 w-7" /> <span className="hidden sm:inline">ClathraRefine</span>
           </Link>
           <CommandPalette />
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
             <AlarmCounters />
             <NotificationCentre />
             <CartButton />

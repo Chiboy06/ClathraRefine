@@ -7,7 +7,7 @@ export async function login(page: Page, userId: string) {
 
 export async function prefs(page: Page, p: { theme?: "night" | "day"; mode?: "DEMO" | "LIVE" }) {
   await page.addInitScript((v) => {
-    localStorage.setItem("clathra-prefs", JSON.stringify({ state: { unit: "PCT", currency: "NGN", theme: v.theme ?? "night", mode: v.mode ?? "DEMO" }, version: 0 }));
+    localStorage.setItem("clathra-prefs", JSON.stringify({ state: { unit: "PCT", currency: "NGN", theme: v.theme ?? "night", mode: v.mode ?? "DEMO" }, version: 1 }));
   }, p);
 }
 
@@ -20,6 +20,6 @@ export const ROUTES = [
   "/app/alarms", "/app/alarms/tiers", "/app/alarms/events", "/app/alarms/audit", "/app/alarms/shift",
   "/app/ai", "/app/ai/predictions", "/app/ai/sensor-health", "/app/ai/solvent", "/app/ai/training",
   "/app/marketplace", "/app/marketplace/p/liquid-co2-food", "/app/marketplace/orders", "/app/marketplace/seller",
-  "/app/settings/connect", "/app/settings/site", "/app/settings/sensors", "/app/settings/users", "/app/settings/alarm-limits",
+  "/app/settings/connect", "/app/settings/site", "/app/settings/sensors", "/app/settings/alarm-limits", "/app/admin", "/app/ai/capture",
   "/app/maintenance", "/app/audits", "/app/support", "/app/audit-history", "/app/get-started", "/app/organisation", "/app/devices/ESP32S3-N16R8-HARNESS-01",
 ];

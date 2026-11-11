@@ -1,7 +1,8 @@
 "use client";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSignIn, useSignUp } from "@clerk/nextjs";
+import { useClerk, useSignIn, useSignUp } from "@clerk/nextjs";
 import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 import { DEMO_USERS } from "@/lib/demoData";
 import { Button, ErrorNote, Notice, postJson } from "./ui";
@@ -145,7 +146,7 @@ export function ClerkSignIn() {
         </button>
         <p className="text-center text-sm text-muted">
           No account?{" "}
-          <a href="/sign-up" className="font-semibold text-primary-fg hover:underline">Create one</a>
+          <Link href="/sign-up" className="font-semibold text-primary-fg hover:underline">Create one</Link>
         </p>
       </form>
     </AuthCard>
@@ -307,7 +308,7 @@ export function ClerkSignUp() {
         </button>
         <p className="text-center text-sm text-muted">
           Already have an account?{" "}
-          <a href="/sign-in" className="font-semibold text-primary-fg hover:underline">Sign in</a>
+          <Link href="/sign-in" className="font-semibold text-primary-fg hover:underline">Sign in</Link>
         </p>
       </form>
       </div>
@@ -353,4 +354,14 @@ export function DemoQuickLogin() {
       {err && <ErrorNote>{err}</ErrorNote>}
     </div>
   );
+}
+
+/** Finishes a Google sign-in or sign-up redirect, then Clerk sends the user on. */
+export function SsoCallback() {
+  const { handleRedirectCallback } = useClerk();
+  const router = useRouter();
+  useEffect(() => {
+    handleRedirectCallback({}).catch(() => router.push("/sign-in"));
+  }, [handleRedirectCallback, router]);
+  return null;
 }

@@ -33,7 +33,7 @@ test("signed-in visitors see Open app on the site", async ({ page }) => {
 });
 
 test("first-run flow: organisation, first site, connect, wait for data", async ({ page }) => {
-  await prefs(page, { mode: "DEMO" });
+  await prefs(page, { mode: "LIVE" });
   await login(page, "demo-buyer");
   await page.goto("/app/get-started");
   await page.getByLabel("Company name").fill("Rivers Gas Works");
@@ -46,17 +46,8 @@ test("first-run flow: organisation, first site, connect, wait for data", async (
   await expect(page.getByTestId("test-connection")).toBeVisible();
   await page.getByRole("button", { name: /wait for data/ }).click();
   await expect(page.getByText("Listening for telemetry from AWS IoT Core")).toBeVisible();
-  await expect(page.getByTestId("mode-badge")).toContainText("LIVE");
-});
-
-test("Use demo plant skips device connection and switches to DEMO", async ({ page }) => {
-  await prefs(page, { mode: "LIVE" });
-  await login(page, "demo-viewer");
-  await page.goto("/app/get-started");
-  await page.getByTestId("use-demo-plant").click();
-  await expect(page).toHaveURL(/\/app$/);
-  await expect(page.getByTestId("mode-badge")).toContainText("DEMO");
-  await expect(page.getByRole("heading", { name: "Plant overview" })).toBeVisible();
+  // LIVE is the default and shows no badge; the SCENARIO badge appears only in DEMO.
+  await expect(page.getByTestId("mode-badge")).toHaveCount(0);
 });
 
 test("prediction page in DEMO runs ahead of the alarm", async ({ page }) => {

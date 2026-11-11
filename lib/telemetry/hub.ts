@@ -174,8 +174,13 @@ class Hub {
     this.msgTimes = [];
     this.set({ mode, latest: null, history: [], status: { connected: false } });
     // LIVE: Convex pushes readings when a deployment is configured; otherwise poll the API.
-    this.source = mode === "DEMO" ? this.scenario : convex ? new ConvexSource((ack) => this.addAck(ack)) : new ApiPollingSource();
-    this.source.start(this.ingest, (status) => this.set({ status }));
+    const source = mode === "DEMO" ? this.scenario : convex ? new ConvexSource((ack) => this.addAck(ack)) : new ApiPollingSource();
+    this.source = source;
+    // A stopped source can still finish an in-flight request; ignore it so its error never shows on the new mode.
+    source.start(
+      (s) => this.source === source && this.ingest(s),
+      (status) => this.source === source && this.set({ status }),
+    );
     if (!this.ticker) this.ticker = setInterval(this.tick, 1000);
   }
 

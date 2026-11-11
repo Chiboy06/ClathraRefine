@@ -17,7 +17,10 @@ Read these before changing related code:
 - **AWS IoT Core** in eu-west-1. Thing `ESP32S3-N16R8-HARNESS-01`. MQTT over TLS, port 8883, client ID = thing name. An IoT rule with an HTTPS action posts telemetry, events and `cmd/ack` to the Convex HTTP action `/ingest` with header `x-ingest-key`. The S3 archive rule stays for model training.
 - **Convex** (`convex/`): telemetry, latest, events, hourly rollups, records and the assistant cache. Raw telemetry kept 30 days, rollups indefinitely (crons). Clerk JWT template `convex` carries the role; every public query checks it. The Next.js server reaches the records store with `CONVEX_SERVER_KEY`. DynamoDB stays only as a fallback store.
 - **Web app:** Next.js (App Router, TypeScript, Tailwind) on Vercel, Clerk auth, AWS access through Vercel OIDC for publishing commands, no stored AWS keys. Payments: Paystack test mode with seller subaccounts.
-- **AI assistant:** Gemini through a Convex action (`convex/assistant.ts`); the key is the Convex environment variable `GEMINI_API_KEY`. Tools run on the data on screen. Without the key, a rule-based fallback answers. No secrets or personal data in prompts.
+- **AI assistant:** Gemini first, Grok (xAI) as the second provider, both through a Convex action (`convex/assistant.ts`); keys are the Convex environment variables `GEMINI_API_KEY` and `GROK_API_KEY`. Tools run on the data on screen. Without either key, a rule-based fallback answers. No secrets or personal data in prompts.
+- **Capture performance** (`lib/capture.ts`, AI > Capture performance): ridge regression of CO2 removal on inlet CO2, gas flow, liquid to gas ratio, solvent temperature and absorbent concentration (from pH); recommends conditions inside the observed range; flags falling removal and ranks causes (solvent degradation, flow variation, abnormal conditions, sensors). Advisory only.
+- **Firmware revisions:** `/ingest` maps the rev D.x payload (`feed_influx_mv`, `amb_leak_mv`, `solvent_mv`, `relays`, `trip`, ...) onto the rev C fields in `lib/ingest.ts` `fromBoard`. Rev D.x has one MQ-135, read as outlet CO2.
+- **Clerk webhook:** Convex `/clerk-webhook` (svix, `CLERK_WEBHOOK_SECRET`) syncs users into the `users` table. There is no Next.js webhook route.
 
 ## Topics
 
@@ -30,15 +33,14 @@ Telemetry fields: `thing, ts (epoch ms, 0 if clock not set), uptime_ms, exhaust_
 
 ## Navigation
 
-Top tabs, each with a left sub-menu (`components/nav.ts`): Overview, Monitoring, Plant (live mimic, 3D view), History, Alarms, AI (assistant, predictions, sensor health, solvent forecast, training), Marketplace, Settings (connect a device, site, sensors and calibration, users and roles, alarm limits), Maintenance. Old routes redirect in `next.config.ts`. The public site is only `/`, `/pricing`, `/contact`, `/sign-in`, `/sign-up`.
+Top tabs, each with a left sub-menu (`components/nav.ts`): Overview, Monitoring, Plant (live mimic, 3D view), History, Alarms, AI (assistant, predictions, capture performance, sensor health, solvent forecast, training), Marketplace, Settings (connect a device, site, sensors and calibration, alarm limits), Admin (users, roles and role requests), Maintenance. Old routes redirect in `next.config.ts`. The public site is only `/`, `/pricing`, `/contact`, `/sign-in`, `/sign-up`.
 
 ## Data modes
 
-The app has two data modes, shown at all times in the header and status bar:
-- **LIVE:** real readings from the board through AWS and Convex.
-- **DEMO:** the full plant scenario (CO2, flows, solvent, revenue, departments, audits, products), driven by a scenario engine and replayed recordings.
+- **LIVE** (default): real readings from the board through AWS and Convex. No mode badge is shown.
+- **Scenario** (DEMO internally): the full plant scenario for sales demos, reached only from the command palette ("Switch to DEMO data"). The header shows a SCENARIO badge while it is on.
 
-Every page works in both modes. A value that does not come from the board carries a small "Demo" or "Simulated" tag.
+The owner removed the header toggle and the "Use demo plant" buttons on purpose; do not restore them. Every page still works in both modes, and a value that does not come from the board carries a small "Simulated" tag.
 
 ## Rules that must never be broken
 

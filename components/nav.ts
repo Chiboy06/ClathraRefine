@@ -1,6 +1,6 @@
 import {
   Activity, Bell, Boxes, Bot, Box, BrainCircuit, CalendarRange, ClipboardCheck, ClipboardList, Cpu, Download, FileClock, FlaskConical, Gauge, GraduationCap, HeartPulse,
-  LayoutDashboard, LifeBuoy, LineChart as LineChartIcon, ListTree, MapPin, Network, Radio, ReceiptText, ScrollText, ShieldAlert, SlidersHorizontal, Store, Users, Workflow, Wind,
+  LayoutDashboard, LifeBuoy, LineChart as LineChartIcon, ListTree, MapPin, Network, Radio, ReceiptText, ScrollText, ShieldAlert, ShieldCheck, SlidersHorizontal, Store, TrendingUp, Users, Workflow, Wind,
 } from "lucide-react";
 
 type NavItem = { href: string; label: string; icon: typeof Gauge };
@@ -37,6 +37,7 @@ export const NAV: Tab[] = [
     { href: "/app/ai", label: "Assistant", icon: Bot },
     { href: "/app/ai/predictions", label: "Predictions", icon: BrainCircuit },
     { href: "/app/ai/sensor-health", label: "Sensor health", icon: HeartPulse },
+    { href: "/app/ai/capture", label: "Capture performance", icon: TrendingUp },
     { href: "/app/ai/solvent", label: "Solvent forecast", icon: FlaskConical },
     { href: "/app/ai/training", label: "Training mode", icon: GraduationCap },
   ] },
@@ -49,8 +50,10 @@ export const NAV: Tab[] = [
     { href: "/app/settings/connect", label: "Connect a device", icon: Radio },
     { href: "/app/settings/site", label: "Site details", icon: MapPin },
     { href: "/app/settings/sensors", label: "Sensors and calibration", icon: Gauge },
-    { href: "/app/settings/users", label: "Users and roles", icon: Users },
     { href: "/app/settings/alarm-limits", label: "Alarm limits", icon: SlidersHorizontal },
+  ] },
+  { group: "Admin", icon: ShieldCheck, items: [
+    { href: "/app/admin", label: "Users and roles", icon: Users },
   ] },
   { group: "Maintenance", icon: Cpu, also: ["/app/audit-history", "/app/devices"], items: [
     { href: "/app/maintenance", label: "Device health", icon: Cpu },

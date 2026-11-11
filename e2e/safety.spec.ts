@@ -44,7 +44,7 @@ test("manual mode is refused while exhaust gas is active, with the reason", asyn
   await login(page, "demo-operator");
   await page.goto("/app/plant");
   await expect(page.getByTestId("gas-source")).toContainText("On");
-  await page.getByRole("radio", { name: "Manual" }).click();
+  await page.getByRole("button", { name: "Manual", exact: true }).click();
   await expect(page.getByTestId("mode-rejected")).toContainText("Exhaust gas active");
 });
 
@@ -55,8 +55,8 @@ test("fan select, execute, confirm in DEMO", async ({ page }) => {
   await expect(page.getByTestId("gas-source")).toContainText("Off");
   // The board leaves exhaust-active once the reading falls below its off threshold, so retry.
   await expect(async () => {
-    await page.getByRole("radio", { name: "Manual" }).click();
-    await expect(page.getByRole("radio", { name: "Manual" })).toHaveAttribute("aria-checked", "true", { timeout: 2_000 });
+    await page.getByRole("button", { name: "Manual", exact: true }).click();
+    await expect(page.getByRole("button", { name: "Manual", exact: true })).toHaveAttribute("aria-pressed", "true", { timeout: 2_000 });
   }).toPass({ timeout: 40_000 });
   // Pick a legal action: stop the pump if it runs (the fan cannot stop first), else toggle the fan.
   await page.getByTestId("mimic-pump").click();

@@ -27,7 +27,7 @@ export const usePrefs = create<Prefs>()(
       unit: "PCT",
       currency: "NGN",
       theme: "day",
-      mode: "DEMO",
+      mode: "LIVE",
       rate: 1450,
       setUnit: (unit) => set({ unit }),
       setCurrency: (currency) => set({ currency }),
@@ -35,7 +35,13 @@ export const usePrefs = create<Prefs>()(
       setMode: (mode) => set({ mode }),
       setRate: (rate) => set({ rate }),
     }),
-    { name: "clathra-prefs", partialize: ({ unit, currency, theme, mode }) => ({ unit, currency, theme, mode }) },
+    {
+      name: "clathra-prefs",
+      partialize: ({ unit, currency, theme, mode }) => ({ unit, currency, theme, mode }),
+      // v1: the console opens on the real board; browsers that saved DEMO before are moved to LIVE once.
+      version: 1,
+      migrate: (s) => ({ ...(s as Partial<Prefs>), mode: "LIVE" }) as Prefs,
+    },
   ),
 );
 

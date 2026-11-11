@@ -2,7 +2,7 @@ import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
 import { internal } from "./_generated/api";
 import { Webhook } from "svix";
-import { IngestAck, IngestTelemetry, classify, deriveTelemetry, isAwsEnableUrl, keyMatches } from "../lib/ingest";
+import { IngestAck, IngestTelemetry, classify, fromBoard, deriveTelemetry, isAwsEnableUrl, keyMatches } from "../lib/ingest";
 
 const http = httpRouter();
 
@@ -90,7 +90,7 @@ http.route({
       return new Response(null, { status: 200 });
     }
 
-    const t = IngestTelemetry.safeParse(body);
+    const t = IngestTelemetry.safeParse(fromBoard(body));
     if (!t.success) return Response.json({ error: t.error.issues.map((i) => `${i.path.join(".")}: ${i.message}`).join("; ") }, { status: 400 });
     const device = t.data.device ?? t.data.thing;
     if (kind === "event") {

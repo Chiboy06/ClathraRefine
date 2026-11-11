@@ -25,6 +25,30 @@ export function classify(body: Record<string, unknown>): Kind {
   return "telemetry";
 }
 
+/**
+ * Firmware rev D.x publishes its own field names and relay order. Map them onto the rev C contract the app reads,
+ * so both revisions land in the same table. Rev C bodies pass through unchanged.
+ * D.x relay bits: 0 fan, 1 pump 1, 2 pump 2, 3 red, 4 green, 5 siren. App bits: 0 fan, 1 pump, 2 red, 3 green, 4 yellow, 5 siren.
+ * D.x has one MQ-135 on GPIO5, the rev C outlet pin, so it is read as outlet CO2.
+ */
+export function fromBoard(body: Record<string, unknown>): Record<string, unknown> {
+  if (body.exhaust_mv !== undefined || body.feed_influx_mv === undefined) return body;
+  const r = Number(body.relays ?? 0);
+  const bit = (n: number) => (r >> n) & 1;
+  return {
+    ...body,
+    exhaust_mv: body.feed_influx_mv,
+    ambient_mv: body.amb_leak_mv,
+    ...(body.solvent_mv !== undefined && { co2_out_mv: body.solvent_mv }),
+    relay_mask: bit(0) | ((bit(1) | bit(2)) << 1) | (bit(3) << 2) | (bit(4) << 3) | (bit(5) << 5),
+    trip_latched: body.trip === true || body.lockout === true,
+    siren_silenced: body.silenced === true,
+    warming_up: body.warmup === true,
+    sensor_fault: body.fault === true,
+    buffered: body.buffered === true,
+  };
+}
+
 /** Only fetch AWS's own confirmation URL, never an arbitrary host. */
 export const isAwsEnableUrl = (url: string) => /^https:\/\/iot\.[a-z0-9-]+\.amazonaws\.com\/confirmdestination\//.test(url);
 

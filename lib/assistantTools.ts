@@ -1,6 +1,8 @@
 // The plant assistant's tools, knowledge and rule-based fallback. Shared by the Convex action (declarations)
 // and the browser (execution against the plant data the operator sees). The assistant never controls equipment.
 import { formatTime, num } from "./format";
+import { FEATURES, capturePoints, deterioration, fitCapture, recommend, type Deterioration, type Recommendation } from "./capture";
+import type { Sample } from "./telemetry/types";
 import type { PlantView } from "./plantView";
 
 export const SYSTEM_PROMPT = `You are the ClathraRefine plant assistant for a gas-leak prevention and CO2 capture skid.
@@ -16,6 +18,7 @@ type Schema = { type: "object"; properties: Record<string, unknown>; required?: 
 const tool = (name: string, description: string, parametersJsonSchema: Schema = { type: "object", properties: {} }) => ({ name, description, parametersJsonSchema });
 
 export const TOOL_DECLARATIONS = [
+  tool("getCapturePerformance", "CO2 capture performance: whether removal is falling and the ranked likely causes (solvent degradation, flow variation, abnormal conditions), how each operating condition influences removal, and recommended operating conditions."),
   tool("getLatestReadings", "Latest plant readings with their time: CO2 inlet and outlet, reduction, capture, flows, solvent temperature and pH, ambient gas level, scrubber and relay states."),
   tool("getTrend", "Recent values of one signal over a range.", {
     type: "object",
@@ -56,7 +59,26 @@ export type AssistantData = {
   anomalyZ: number | null;
   health: { id: string; name: string; health: { status: string; evidence: string } }[];
   solvent: { minutes: number | null; loadingPct: number; ratioNow: number };
+  capture: CaptureReport;
 };
+
+export type CaptureReport = { deterioration: Deterioration | null; recommendation: Recommendation | null; influence: Record<string, number> | null };
+
+/** Capture model, recommendation and deterioration check from the readings on screen. */
+export function captureReport(history: Sample[]): CaptureReport {
+  const pts = capturePoints(history);
+  const m = fitCapture(pts);
+  return { deterioration: deterioration(pts), recommendation: m && recommend(m, pts), influence: m && Object.fromEntries(FEATURES.map((f) => [f.label, +m.influence[f.key].toFixed(2)])) };
+}
+
+export function captureMessage(d: AssistantData): string {
+  const det = d.capture.deterioration;
+  const rec = d.capture.recommendation;
+  if (!det) return "Capture performance is still learning: it needs inlet and outlet CO2, both flows, solvent temperature and pH while scrubbing.";
+  const head = det.status === "ok" ? `CO2 removal is steady at ${num(det.recent, 1)}%.` : `CO2 removal fell from ${num(det.reference, 1)}% to ${num(det.recent, 1)}%. Most likely: ${det.causes.map((c) => `${c.title.toLowerCase()} (${c.evidence})`).slice(0, 2).join("; ")}.`;
+  const advice = rec?.actions.length ? ` To improve it: ${rec.actions.join("; ")}. Predicted removal ${num(rec.predicted, 1)}%.` : "";
+  return head + advice + " Advisory: an operator makes any change.";
+}
 
 const RANGES: Record<string, number> = { "15m": 900_000, "1h": 3_600_000, "24h": 86_400_000 };
 const t = (ms: number | null) => (ms ? formatTime(ms) : "no reading yet");
@@ -65,6 +87,8 @@ const t = (ms: number | null) => (ms ? formatTime(ms) : "no reading yet");
 export function runTool(name: string, args: Record<string, unknown>, d: AssistantData): unknown {
   const v = d.view;
   switch (name) {
+    case "getCapturePerformance":
+      return d.capture;
     case "getLatestReadings":
       return {
         time: t(v.at),
@@ -130,6 +154,7 @@ export function ruleAnswer(question: string, d: AssistantData): string {
   if (/inlet/.test(q)) return `Inlet CO2 is ${num(v.co2InPpm.value)} ppm (${num(v.co2InPpm.value / 10_000, 2)}% Vol) ${at}.`;
   if (/reduction|efficien/.test(q)) return `CO2 reduction is ${num(v.reductionPct.value, 1)}%: inlet ${num(v.co2InPpm.value)} ppm, outlet ${num(v.co2OutPpm.value)} ppm ${at}.`;
   if (/captur/.test(q)) return `Capturing ${num(v.captureGMin.value * 60, 2)} g/h now; ${num(v.capturedTodayG.value, 2)} g captured today ${at}.`;
+  if (/capture|removal|performance|recommend|improve|deteriorat/.test(q)) return captureMessage(d);
   if (/solvent|saturat|breakthrough/.test(q)) return solventMessage(d);
   if (/alarm/.test(q)) return d.alarms.length ? `Active alarms: ${d.alarms.map((a) => `${a.priority} ${a.tag} ${a.message} since ${t(a.since)}`).join("; ")}.` : `No active alarms ${at}.`;
   if (/risk|predict|forecast|leak/.test(q)) return predictionMessage(d);

@@ -193,3 +193,26 @@ describe("cart pricing", () => {
     expect(r.errors).toHaveLength(2);
   });
 });
+
+import { IngestTelemetry, fromBoard } from "./ingest";
+
+describe("firmware rev D payload", () => {
+  const d2 = {
+    thing: "ESP32S3-N16R8-HARNESS-01", ts: 1794144141948, uptime_ms: 90000,
+    feed_influx_mv: 1583, feed_delta_mv: 0, amb_leak_mv: 420, amb_delta_mv: 0, solvent_mv: 900, solvent_delta: 0,
+    ambient_level: "NORMAL", scrubber: "SCRUBBING", relays: 0b010111,
+    trip: false, silenced: false, warmup: false, scram: false, fault: false, lockout: false, buffered: false, fw: "rev-D.2",
+  };
+  it("maps onto the rev C contract and passes ingest validation", () => {
+    const t = IngestTelemetry.safeParse(fromBoard(d2));
+    expect(t.success).toBe(true);
+    expect(t.data).toMatchObject({ exhaust_mv: 1583, ambient_mv: 420, co2_out_mv: 900, trip_latched: false });
+    // fan, pump 1, pump 2, green on: app sees fan, pump and green (bits 0, 1, 3)
+    expect(t.data?.relay_mask).toBe(0b001011);
+  });
+  it("treats lockout as a latched trip and leaves rev C bodies alone", () => {
+    expect(fromBoard({ ...d2, lockout: true }).trip_latched).toBe(true);
+    const c = { exhaust_mv: 1 };
+    expect(fromBoard(c)).toBe(c);
+  });
+});

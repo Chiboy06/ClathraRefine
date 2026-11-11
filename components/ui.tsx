@@ -64,7 +64,7 @@ export function Help({ children, label = "Help" }: { children: ReactNode; label?
       <summary aria-label={label} className="flex h-5 w-5 cursor-pointer list-none items-center justify-center rounded-full border border-line text-[11px] font-bold text-muted hover:text-fg [&::-webkit-details-marker]:hidden">
         ?
       </summary>
-      <div className="absolute left-0 top-6 z-30 w-72 rounded-xl border border-line bg-panel p-3 text-xs font-normal leading-relaxed text-fg shadow-lg">{children}</div>
+      <div className="fixed inset-x-4 z-30 mt-2 rounded-xl sm:absolute sm:inset-x-auto sm:left-0 sm:top-6 sm:mt-0 sm:w-72 border border-line bg-panel p-3 text-xs font-normal leading-relaxed text-fg shadow-lg">{children}</div>
     </details>
   );
 }
@@ -246,6 +246,8 @@ export const inputCls = "min-h-10 w-full rounded-lg border border-line bg-elev p
 export function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: { value: T; label: string }[]; onChange: (v: T) => void; label: string }) {
   // Uses role="group" + aria-pressed toggle buttons with roving tabindex so keyboard
   // users navigate with arrow keys (correct pattern) rather than Tab through every option.
+  // Arrows only move focus; Enter or Space selects. Some groups send board commands (control mode),
+  // so moving focus must never operate equipment.
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     const btns = Array.from(e.currentTarget.querySelectorAll<HTMLButtonElement>("button"));
     const idx = btns.indexOf(document.activeElement as HTMLButtonElement);
@@ -254,12 +256,10 @@ export function Segmented<T extends string>({ value, options, onChange, label }:
       e.preventDefault();
       const next = btns[(idx + 1) % btns.length];
       next.focus();
-      onChange(options[(idx + 1) % options.length].value);
     } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
       e.preventDefault();
       const prev = btns[(idx - 1 + btns.length) % btns.length];
       prev.focus();
-      onChange(options[(idx - 1 + options.length) % options.length].value);
     }
   };
   return (

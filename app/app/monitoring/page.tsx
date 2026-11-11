@@ -9,11 +9,9 @@ import { ppmFromMv } from "@/lib/mq135";
 import { TAGS } from "@/lib/tags";
 import type { Quality } from "@/lib/quality";
 
-// ISA-5.1 tag IDs only — no sensor model or GPIO numbers exposed
+// ISA-5.1 tag IDs only: no sensor model or GPIO numbers exposed
 const TAG_AMBIENT = TAGS.find((t) => t.id === "AT-101")!;
 const TAG_EXHAUST = TAGS.find((t) => t.id === "AT-102")!;
-const TAG_CO2_IN = TAGS.find((t) => t.id === "AT-103")!;
-const TAG_CO2_OUT = TAGS.find((t) => t.id === "AT-104")!;
 
 type SignalRow = { tag: string; name: string; value: string; unit: string; q: Quality | "Simulated"; bar?: { tag: typeof TAG_AMBIENT; value: number } };
 
@@ -66,11 +64,11 @@ export default function Monitoring() {
   const q = ambient.q;
   const fitted = (v: number | undefined) => v !== undefined && p.mode === "LIVE";
   const opt = (v: number | undefined, unit: string, dp: number): { value: string; unit: string; q: Quality | "Simulated" } => ({
-    value: v === undefined ? "—" : num(v, dp),
+    value: v === undefined ? "-" : num(v, dp),
     unit,
     q: fitted(v) ? q : "Simulated",
   });
-  const co2ppm = (mv?: number) => (mv === undefined ? "—" : num(ppmFromMv(mv) ?? 0));
+  const co2ppm = (mv?: number) => (mv === undefined ? "-" : num(ppmFromMv(mv) ?? 0));
 
   const devices: { id: DeviceId; label: string; status: "ok" | "warn" | "crit" | "off" }[] = [
     { id: "gas-safety", label: "Gas safety", status: l?.ambient_level === "CRITICAL" ? "crit" : l?.ambient_level === "WARNING" ? "warn" : "ok" },
@@ -82,7 +80,7 @@ export default function Monitoring() {
 
   const gasSafetyRows: SignalRow[] = [
     { tag: "AT-101", name: "Ambient gas concentration", value: num(ambient.mv), unit: "mV", q: ambient.q, bar: { tag: TAG_AMBIENT, value: ambient.mv } },
-    { tag: "AT-101", name: "Ambient alarm level", value: l?.ambient_level ?? "—", unit: "", q: ambient.q },
+    { tag: "AT-101", name: "Ambient alarm level", value: l?.ambient_level ?? "-", unit: "", q: ambient.q },
     { tag: "AT-102", name: "Exhaust gas concentration", value: num(exhaust.mv), unit: "mV", q: exhaust.q, bar: { tag: TAG_EXHAUST, value: exhaust.mv } },
     { tag: "HS-001", name: "SCRAM status", value: l?.scram ? "ACTIVE" : "Normal", unit: "", q },
     { tag: "XA-206", name: "Trip latched", value: l?.trip_latched ? "LATCHED" : "Normal", unit: "", q },
@@ -99,13 +97,13 @@ export default function Monitoring() {
       value: (() => {
         const i = l?.co2_in_mv === undefined ? null : ppmFromMv(l.co2_in_mv);
         const o = l?.co2_out_mv === undefined ? null : ppmFromMv(l.co2_out_mv);
-        return i && o !== null ? num(((i - o) / i) * 100, 1) : "—";
+        return i && o !== null ? num(((i - o) / i) * 100, 1) : "-";
       })(),
       unit: "%",
       q: fitted(l?.co2_in_mv) && fitted(l?.co2_out_mv) ? q : "Simulated",
     },
     { tag: "LT-401", name: "Solvent loading", value: num(p.solventLoadingPct, 1), unit: "%", q: "Simulated" },
-    { tag: "P-202", name: "Scrubber state", value: l?.scrubber ?? "—", unit: "", q },
+    { tag: "P-202", name: "Scrubber state", value: l?.scrubber ?? "-", unit: "", q },
   ];
 
   const processRows: SignalRow[] = [
@@ -126,8 +124,8 @@ export default function Monitoring() {
   }));
 
   const controllerRows: SignalRow[] = [
-    { tag: "HS-001", name: "Firmware version", value: l?.fw ?? "—", unit: "", q },
-    { tag: "HS-001", name: "Uptime", value: l ? num(l.uptime_ms / 1000) : "—", unit: "s", q },
+    { tag: "HS-001", name: "Firmware version", value: l?.fw ?? "-", unit: "", q },
+    { tag: "HS-001", name: "Uptime", value: l ? num(l.uptime_ms / 1000) : "-", unit: "s", q },
     { tag: "HS-001", name: "Control mode", value: l?.mode ?? "AUTO", unit: "", q },
     { tag: "HS-001", name: "Buffered reading", value: l?.buffered ? "Yes" : "No", unit: "", q },
     { tag: "HS-001", name: "Data quality", value: q, unit: "", q },

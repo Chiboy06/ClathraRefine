@@ -46,7 +46,7 @@ const nextConfig: NextConfig = {
       shift: "/app/alarms/shift",
       predict: "/app/ai/predictions",
       connect: "/app/settings/connect",
-      admin: "/app/settings/users",
+      "settings/users": "/app/admin",
       reports: "/app/history/export",
       relays: "/app/plant",
       measurements: "/app/history",
@@ -57,6 +57,7 @@ const nextConfig: NextConfig = {
       dashboard: "/app",
       onboarding: "/app/settings/connect",
       welcome: "/app/organisation",
+      admin: "/app/admin",
       ...app,
     };
     const sameUnderApp = ["fleet", "departments", "alarms", "marketplace/:p*", "marketplace", "audits", "audit-history", "support"];
