@@ -26,6 +26,7 @@ export function Mimic({ v, layers, selected, onSelect, interlocks }: { v: PlantV
     { x: 60, y: 470, v: 0.1 },
   ];
   const equip = (eq: Equipment, label: string, x: number, y: number, isOn: boolean, extra: string | null) => (
+    <g key={eq}>
     <g
       role="button"
       tabIndex={0}
@@ -45,6 +46,8 @@ export function Mimic({ v, layers, selected, onSelect, interlocks }: { v: PlantV
       ) : (
         <path d={`M${x - 14} ${y + 12} L${x} ${y - 16} L${x + 14} ${y + 12} Z`} fill={on(isOn)} />
       )}
+    </g>
+    <g aria-hidden onClick={() => onSelect(eq)} className="cursor-pointer">
       <text x={x} y={y + 50} textAnchor="middle" fontSize={13} fontWeight={600} fill="var(--fg)">
         {label}
       </text>
@@ -56,6 +59,7 @@ export function Mimic({ v, layers, selected, onSelect, interlocks }: { v: PlantV
           {extra}
         </text>
       )}
+    </g>
     </g>
   );
   const sensor = (label: string, tag: string, x: number, y: number, value: string, alarm: boolean) => (

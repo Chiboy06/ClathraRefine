@@ -25,7 +25,7 @@ function CopyBlock({ label, text }: { label: string; text: string }) {
           {done ? "Copied" : "Copy"}
         </button>
       </div>
-      <pre className="max-h-72 overflow-auto rounded-lg border border-line bg-elev p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all">{text}</pre>
+      <pre tabIndex={0} aria-label={label} className="max-h-72 overflow-auto rounded-lg border border-line bg-elev p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all">{text}</pre>
     </div>
   );
 }
@@ -102,15 +102,13 @@ export function AwsSetupGuide({ thing, region }: { thing: string; region: string
 
 // Paste each downloaded file between the brackets. Never commit this file.
 static const char AWS_CERT_CA[] PROGMEM = R"EOF(
------BEGIN CERTIFICATE-----
-(AmazonRootCA1.pem)
------END CERTIFICATE-----
+(paste the whole of AmazonRootCA1.pem here)
 )EOF";
 static const char AWS_CERT_CRT[] PROGMEM = R"EOF(
-(xxxx-certificate.pem.crt)
+(paste the whole of xxxx-certificate.pem.crt here)
 )EOF";
 static const char AWS_CERT_PRIVATE[] PROGMEM = R"EOF(
-(xxxx-private.pem.key)
+(paste the whole of xxxx-private.pem.key here)
 )EOF";`;
   const env = `AWS_ROLE_ARN=arn:aws:iam::${acct}:role/ClathraDashboardRole
 AWS_REGION=${region}

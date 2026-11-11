@@ -15,14 +15,17 @@ export default function SignInPage() {
         </Suspense>
       ) : demoAuthEnabled() ? (
         <div className="w-full max-w-sm rounded-2xl border border-line bg-panel p-8">
-          <h2 className="mb-1 font-semibold">Quick login</h2>
+          <h1 className="mb-1 font-semibold">Quick login</h1>
           <p className="mb-4 text-sm text-muted">Select a role to explore the platform.</p>
           <Suspense>
             <DemoQuickLogin />
           </Suspense>
         </div>
       ) : (
-        <Notice tone="warn">Sign-in is not configured. Set the Clerk keys, or DEMO_AUTH=true for a local build.</Notice>
+        <>
+          <h1 className="text-xl font-semibold">Sign in</h1>
+          <Notice tone="warn">Sign-in is not configured. Set the Clerk keys, or DEMO_AUTH=true for a local build.</Notice>
+        </>
       )}
     </div>
   );

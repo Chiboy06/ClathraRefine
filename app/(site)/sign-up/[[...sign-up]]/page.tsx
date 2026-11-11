@@ -15,10 +15,13 @@ export default function SignUpPage() {
           <ClerkSignUp />
         </Suspense>
       ) : (
+        <>
+        <h1 className="text-xl font-semibold">Create your account</h1>
         <Notice tone="neutral">
           Sign-up runs through Clerk, which is not configured on this build. Use the{" "}
           <Link href="/sign-in" className="underline">quick login</Link>.
         </Notice>
+        </>
       )}
     </div>
   );

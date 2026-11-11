@@ -76,33 +76,135 @@ export function ClerkSignIn() {
     }
   };
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
+  // form: email and password; code: a one-time email code for a new device (device trust) or a second factor;
+  // reset: the password reset code; newpw: the new password after a verified reset code.
+  const [stage, setStage] = useState<"form" | "code" | "reset" | "newpw">("form");
+  const [code, setCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+
+  const run = async (fn: () => Promise<string | void>) => {
     if (!signIn) return;
     setBusy(true);
     setErr("");
     try {
-      // Clerk 7: create sets the identifier, then password() submits the credential
-      const { error: createErr } = await signIn.create({ identifier: email });
-      if (createErr) { setErr(createErr.message); return; }
-
-      const { error: pwErr } = await signIn.password({ password });
-      if (pwErr) { setErr(pwErr.message); return; }
-
-      if (signIn.status === "complete") {
-        const { error: finalErr } = await signIn.finalize();
-        if (finalErr) { setErr(finalErr.message); return; }
-        const next = params.get("next");
-        router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/app");
-      } else {
-        setErr("Additional verification required. Please check your email.");
-      }
+      const msg = await fn();
+      if (msg) setErr(msg);
     } catch (e) {
       setErr(clerkErr(e));
     } finally {
       setBusy(false);
     }
   };
+
+  const finish = async (): Promise<string | void> => {
+    if (!signIn) return;
+    if (signIn.status === "needs_client_trust" || signIn.status === "needs_second_factor") {
+      const { error } = await signIn.mfa.sendEmailCode();
+      if (error) return error.message;
+      setCode("");
+      setStage("code");
+      return;
+    }
+    if (signIn.status !== "complete") return "This account needs a sign-in step this form does not support. Contact your administrator.";
+    const { error } = await signIn.finalize();
+    if (error) return error.message;
+    const next = params.get("next");
+    router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/app");
+  };
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    run(async () => {
+      // Clerk 7: create sets the identifier, then password() submits the credential
+      const { error: createErr } = await signIn!.create({ identifier: email });
+      if (createErr) return createErr.message;
+      const { error: pwErr } = await signIn!.password({ password });
+      if (pwErr) return pwErr.message;
+      return finish();
+    });
+  };
+
+  const verifyCode = (e: FormEvent) => {
+    e.preventDefault();
+    run(async () => {
+      const { error } = await signIn!.mfa.verifyEmailCode({ code });
+      if (error) return error.message;
+      return finish();
+    });
+  };
+
+  const forgot = () =>
+    run(async () => {
+      if (!email) return "Enter your email address first.";
+      const { error: createErr } = await signIn!.create({ identifier: email });
+      if (createErr) return createErr.message;
+      const { error } = await signIn!.resetPasswordEmailCode.sendCode();
+      if (error) return error.message;
+      setCode("");
+      setStage("reset");
+    });
+
+  const verifyReset = (e: FormEvent) => {
+    e.preventDefault();
+    run(async () => {
+      const { error } = await signIn!.resetPasswordEmailCode.verifyCode({ code });
+      if (error) return error.message;
+      setStage("newpw");
+    });
+  };
+
+  const saveNewPassword = (e: FormEvent) => {
+    e.preventDefault();
+    run(async () => {
+      const { error } = await signIn!.resetPasswordEmailCode.submitPassword({ password: newPassword });
+      if (error) return error.message;
+      return finish();
+    });
+  };
+
+  const codeField = (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor="si-code" className="text-sm font-medium">Code from your email</label>
+      <input id="si-code" type="text" inputMode="numeric" pattern="\d{6}" maxLength={6} value={code} onChange={(e) => setCode(e.target.value)} autoComplete="one-time-code" required placeholder="123456" className={fieldCls + " text-center font-mono text-lg tracking-widest"} />
+    </div>
+  );
+  const submitBtn = (label: string) => (
+    <button type="submit" disabled={busy || !signIn} className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 disabled:opacity-50">
+      {busy && <Loader2 aria-hidden className="h-4 w-4 animate-spin" />}
+      {label}
+    </button>
+  );
+  const back = (
+    <button type="button" onClick={() => { setStage("form"); setErr(""); }} className="text-sm font-semibold text-primary-fg hover:underline">
+      Back to sign in
+    </button>
+  );
+
+  if (stage === "code" || stage === "reset")
+    return (
+      <AuthCard title={stage === "code" ? "Check your email" : "Reset your password"} subtitle={`We sent a 6-digit code to ${email}.${stage === "code" ? " This confirms it is you on a new device." : ""}`}>
+        <form onSubmit={stage === "code" ? verifyCode : verifyReset} className="flex flex-col gap-4">
+          {codeField}
+          {err && <ErrorNote>{err}</ErrorNote>}
+          {submitBtn("Verify")}
+          {back}
+        </form>
+      </AuthCard>
+    );
+  if (stage === "newpw")
+    return (
+      <AuthCard title="Choose a new password">
+        <form onSubmit={saveNewPassword} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="si-newpw" className="text-sm font-medium">New password</label>
+            <PasswordInput id="si-newpw" value={newPassword} onChange={setNewPassword} autoComplete="new-password" />
+            <p className="text-xs text-muted">At least 15 characters.</p>
+          </div>
+          {err && <ErrorNote>{err}</ErrorNote>}
+          {submitBtn("Save and sign in")}
+        </form>
+      </AuthCard>
+    );
 
   return (
     <AuthCard title="Sign in to ClathraRefine">
@@ -134,6 +236,9 @@ export function ClerkSignIn() {
         <div className="flex flex-col gap-1.5">
           <label htmlFor="si-password" className="text-sm font-medium">Password</label>
           <PasswordInput id="si-password" value={password} onChange={setPassword} autoComplete="current-password" />
+          <button type="button" onClick={forgot} className="self-end text-xs font-semibold text-primary-fg hover:underline">
+            Forgot password?
+          </button>
         </div>
         {err && <ErrorNote>{err}</ErrorNote>}
         <button
@@ -295,7 +400,7 @@ export function ClerkSignUp() {
         <div className="flex flex-col gap-1.5">
           <label htmlFor="su-password" className="text-sm font-medium">Password</label>
           <PasswordInput id="su-password" value={password} onChange={setPassword} autoComplete="new-password" />
-          <p className="text-xs text-muted">At least 8 characters.</p>
+          <p className="text-xs text-muted">At least 15 characters.</p>
         </div>
         {err && <ErrorNote>{err}</ErrorNote>}
         <button
