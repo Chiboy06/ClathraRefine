@@ -25,7 +25,7 @@ export function aws() {
   return clients;
 }
 
-export type BoardCommand = { cmd: "scram" } | { cmd: "ping" } | { cmd: "mode"; value: "manual" | "auto" } | { cmd: "fan" | "pump"; value: "on" | "off" };
+export type BoardCommand = { cmd: "scram" } | { cmd: "ping" } | { cmd: "mode"; value: "manual" | "auto" } | { cmd: "fan" | "pump"; value: "on" | "off" } | { cmd: "stop"; value: "all" };
 
 /** The firmware accepts only these commands and applies its own interlocks to mode, fan and pump. */
 export async function publishCmd(c: BoardCommand | "scram" | "ping") {

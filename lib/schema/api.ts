@@ -98,4 +98,6 @@ export const CommandBody = z.discriminatedUnion("cmd", [
   z.object({ cmd: z.literal("mode"), value: z.enum(["manual", "auto"]), mode: DataMode }),
   z.object({ cmd: z.literal("fan"), value: z.enum(["on", "off"]), mode: DataMode }),
   z.object({ cmd: z.literal("pump"), value: z.enum(["on", "off"]), mode: DataMode }),
+  // Fan and both pumps off in one command. Lamps and siren stay under the board's safety task.
+  z.object({ cmd: z.literal("stop"), value: z.literal("all"), mode: DataMode }),
 ]);

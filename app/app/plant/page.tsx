@@ -28,6 +28,7 @@ export default function PlantDiagram() {
   const [layers, setLayers] = useState<Layers>({ values: true, flow: true, alarms: true, heat: false, interlocks: true });
   const [stored, setStored] = useState<Sbo>({ phase: "idle" });
   const [err, setErr] = useState("");
+  const [stopAt, setStopAt] = useState<number | null>(null);
   const allowed = can(me?.session?.role, "ack");
   if (!p.ready) return <Page title="Process diagram"><LoadingPanel rows={6} /></Page>;
   const v = plantView(p, getHub().demoForecast(30));
@@ -76,6 +77,22 @@ export default function PlantDiagram() {
     }
   };
   const lastModeAck = p.acks.find((a) => a.cmd === "mode");
+  const lastStopAck = p.acks.find((a) => a.cmd === "stop");
+  // Press, then confirm within 4 s: one stray click must not stop extraction.
+  const stopArmed = stopAt !== null && p.now - stopAt < 4000;
+  const stopAll = async () => {
+    if (!stopArmed) return setStopAt(Date.now());
+    setStopAt(null);
+    setErr("");
+    try {
+      if (p.mode === "DEMO") {
+        getHub().commandDemo({ cmd: "pump", value: "off" });
+        getHub().commandDemo({ cmd: "fan", value: "off" });
+      } else await postJson("/api/command", { cmd: "stop", value: "all", mode: p.mode });
+    } catch (e) {
+      setErr((e as Error).message);
+    }
+  };
   const armLeft = s.phase === "armed" ? Math.max(0, Math.ceil((ARM_MS - (p.now - s.armedAt)) / 1000)) : 0;
 
   return (
@@ -144,6 +161,19 @@ export default function PlantDiagram() {
         </div>
         )}
         {err && <div className="mt-3"><ErrorNote>{err}</ErrorNote></div>}
+      </Card>
+
+      <Card title="Stop fan and pumps" help="Sends one stop command: the intake fan and both pumps switch off. The red and green lamps and the siren stay under the board's own safety control. If gas is detected or a trip is latched, the board starts extraction again by itself, as it should.">
+        <div className="flex flex-wrap items-center gap-3">
+          <Button variant={stopArmed ? "danger" : undefined} disabled={!allowed} onClick={stopAll} data-testid="stop-all">
+            <Square aria-hidden className="h-4 w-4" /> {stopArmed ? "Confirm: stop fan and pumps" : "Stop fan and pumps"}
+          </Button>
+          {lastStopAck && (
+            <span className="text-sm text-muted" role="status">
+              {lastStopAck.accepted ? "Board accepted stop" : `Board refused stop: ${lastStopAck.reason}`}
+            </span>
+          )}
+        </div>
       </Card>
 
       <Drawer open={!!eq} onClose={() => setStored({ phase: "idle" })} title={eq === "fan" ? "Intake fan XV-201" : "Solvent pump P-202"}>
