@@ -150,7 +150,14 @@ export function ConnectDevice({ embedded = false }: { embedded?: boolean }) {
           </div>
         </Step>
       </form>
-      <AwsSetupGuide thing={f.thing} region={f.region} />
+      {embedded ? (
+        <Notice tone="neutral">
+          Connecting AWS is a one-off job for whoever manages your AWS account. The full guide, with every value filled in, is in{" "}
+          <a href="/app/settings/connect" className="font-semibold underline">Settings › Connect a device</a>.
+        </Notice>
+      ) : (
+        <AwsSetupGuide thing={f.thing} region={f.region} />
+      )}
     </div>
   );
   return embedded ? body : (

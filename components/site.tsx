@@ -32,6 +32,12 @@ const LINKS = [
   { href: "/app", label: "Console" },
 ];
 
+/** Account links for menus and the footer: signed-in visitors get the console, never "Sign in". */
+function useAccountLinks() {
+  const { me } = useMe();
+  return me?.session ? [{ href: "/app", label: "Open console" }] : [{ href: "/sign-in", label: "Sign in" }, { href: "/sign-up", label: "Sign up" }];
+}
+
 /** Signed-in visitors see "Open app" instead of "Sign in". */
 function AccountLinks() {
   const { me } = useMe();
@@ -53,6 +59,7 @@ function AccountLinks() {
 
 export function SiteHeader() {
   const [mobile, setMobile] = useState(false);
+  const account = useAccountLinks();
   return (
     <header className="sticky top-0 z-30 border-b border-line bg-panel/85 backdrop-blur-md supports-[backdrop-filter]:bg-panel/75">
       <Container className="flex h-16 items-center gap-4">
@@ -76,7 +83,7 @@ export function SiteHeader() {
       {mobile && (
         <nav aria-label="Site mobile" className="border-t border-line bg-panel lg:hidden">
           <Container className="grid grid-cols-2 gap-x-6 gap-y-1 py-4 text-sm">
-            {[...LINKS, { href: "/sign-in", label: "Sign in" }].map((i) => (
+            {[...LINKS, ...account].map((i) => (
               <Link key={i.href} href={i.href} onClick={() => setMobile(false)} className="rounded-lg px-2 py-2 hover:bg-elev">
                 {i.label}
               </Link>
@@ -89,7 +96,8 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
-  const cols = [{ h: "ClathraRefine", links: [...LINKS, { href: "/sign-in", label: "Sign in" }, { href: "/sign-up", label: "Sign up" }] }];
+  const account = useAccountLinks();
+  const cols = [{ h: "ClathraRefine", links: [...LINKS, ...account] }];
   return (
     <footer className="border-t border-line bg-panel">
       <Container className="grid gap-10 py-14 md:grid-cols-[2fr_1fr]">

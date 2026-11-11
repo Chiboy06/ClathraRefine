@@ -295,8 +295,13 @@ function StatusBar() {
   );
 }
 
+/** First-run setup is a focused flow: no tabs, alarms or plant controls until the user reaches the console. */
+const SETUP = ["/app/get-started", "/app/organisation"];
+
 export function Shell({ children }: { children: ReactNode }) {
   const setRate = usePrefs((s) => s.setRate);
+  const path = usePathname();
+  const setup = SETUP.includes(path);
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
@@ -313,28 +318,41 @@ export function Shell({ children }: { children: ReactNode }) {
           <Link href="/app" className="flex shrink-0 items-center gap-2 font-semibold">
             <Mark className="h-7 w-7" /> <span className="hidden sm:inline">ClathraRefine</span>
           </Link>
-          <CommandPalette />
-          <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
-            <AlarmCounters />
-            <NotificationCentre />
-            <CartButton />
-            <ScramButton />
-            <UserMenu />
+          {setup ? (
+            <div className="ml-auto flex items-center gap-2">
+              <Link href="/app" className="rounded-md px-3 py-1.5 text-sm font-semibold text-muted hover:bg-elev hover:text-fg">
+                Skip setup
+              </Link>
+              <UserMenu />
+            </div>
+          ) : (
+            <>
+              <CommandPalette />
+              <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2">
+                <AlarmCounters />
+                <NotificationCentre />
+                <CartButton />
+                <ScramButton />
+                <UserMenu />
+              </div>
+            </>
+          )}
+        </div>
+        {!setup && (
+          <div className="border-t border-line px-2 md:px-4">
+            <TabBar />
           </div>
-        </div>
-        <div className="border-t border-line px-2 md:px-4">
-          <TabBar />
-        </div>
-        <AlarmBanner />
+        )}
+        {!setup && <AlarmBanner />}
       </header>
       <div className="flex min-w-0 flex-1 flex-col lg:flex-row">
-        <SubMenu />
+        {!setup && <SubMenu />}
         <main id="main" className="min-w-0 flex-1">
           {children}
         </main>
       </div>
-      <StatusBar />
-      <AssistantLauncher />
+      {!setup && <StatusBar />}
+      {!setup && <AssistantLauncher />}
       <CartDrawer />
       <IdleTimer />
     </div>
