@@ -136,7 +136,13 @@ export function ConnectDevice({ embedded = false }: { embedded?: boolean }) {
               <PlugZap aria-hidden className="h-4 w-4" /> Test connection
             </Button>
             {p.mode === "DEMO" && <Badge tone="warn">DEMO: answered by the scenario</Badge>}
+            {p.mode === "LIVE" && me && <Badge tone={me.commands ? "ok" : "warn"}>{me.commands ? "Commands ready" : "Commands not set up"}</Badge>}
           </div>
+          {p.mode === "LIVE" && me && !me.commands && (
+            <p className="mt-2 text-sm text-muted">
+              Readings work without this. To send ping, SCRAM, fan and pump, add AWS_ROLE_ARN and IOT_ENDPOINT in Vercel (part 4 of the AWS guide below) and redeploy.
+            </p>
+          )}
           {test.text && (
             <div className="mt-3" data-testid="test-result">
               {test.state === "ok" ? <Notice tone="ok">{test.text}</Notice> : <ErrorNote>{test.text}</ErrorNote>}

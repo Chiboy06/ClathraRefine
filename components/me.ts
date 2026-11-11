@@ -2,7 +2,7 @@
 import { useEffect, useSyncExternalStore } from "react";
 import type { Session } from "@/lib/server/auth";
 
-type Me = { session: Session | null; auth: "clerk" | "demo" | "none"; aws: boolean; paystack: boolean };
+type Me = { session: Session | null; auth: "clerk" | "demo" | "none"; aws: boolean; commands?: boolean; paystack: boolean };
 let meState: Me | null = null;
 let meLoaded = false;
 let meLoading: Promise<void> | null = null;

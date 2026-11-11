@@ -19,7 +19,7 @@ export async function POST(req: Request) {
   const at = Date.now();
   const id = newId(at);
   if (b.data.mode === "LIVE") {
-    if (!awsEnabled()) return new Response("LIVE mode needs AWS", { status: 503 });
+    if (!awsEnabled() || !process.env.IOT_ENDPOINT) return new Response("Sending commands is not set up: add AWS_ROLE_ARN and IOT_ENDPOINT in Vercel, then redeploy", { status: 503 });
     await publishCmd("scram");
   }
   await put("commands", { id, created_at: at, kind: "scram", mode: b.data.mode, requested_by: s.userId, requested_name: s.name, status: "sent" });

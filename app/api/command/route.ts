@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   if (!b.ok) return b.res;
   const { cmd, value, mode } = b.data;
   if (mode === "LIVE") {
-    if (!awsEnabled()) return new Response("LIVE mode needs AWS", { status: 503 });
+    if (!awsEnabled() || !process.env.IOT_ENDPOINT) return new Response("Sending commands is not set up: add AWS_ROLE_ARN and IOT_ENDPOINT in Vercel, then redeploy", { status: 503 });
     await publishCmd({ cmd, value } as Parameters<typeof publishCmd>[0]);
   }
   const at = Date.now();
