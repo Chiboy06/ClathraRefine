@@ -15,13 +15,23 @@ test("old console paths redirect permanently to /app", async ({ request }) => {
     ["/welcome", "/app/organisation"],
     ["/marketplace", "/app/marketplace"],
     ["/marketplace/p/liquid-co2-food", "/app/marketplace/p/liquid-co2-food"],
-    ["/devices/ESP32S3-N16R8-HARNESS-01", "/app/maintenance"],
+    ["/devices/ESP32S3-N16R8-HARNESS-01", "/app/devices/ESP32S3-N16R8-HARNESS-01"],
   ];
   for (const [from, to] of cases) {
     const r = await request.get(from, { maxRedirects: 0 });
     expect(r.status(), from).toBe(308);
     expect(new URL(r.headers()["location"], "http://x").pathname, from).toBe(to);
   }
+});
+
+test("signing in updates the header without a full page load", async ({ page }) => {
+  await page.goto("/sign-in");
+  // Survives client-side navigation only; a full reload would clear it.
+  await page.evaluate(() => ((window as unknown as { __noReload?: boolean }).__noReload = true));
+  await page.getByTestId("login-demo-operator").click();
+  await expect(page).toHaveURL(/\/app$/);
+  await expect(page.getByRole("link", { name: "Sign in" })).toHaveCount(0);
+  expect(await page.evaluate(() => (window as unknown as { __noReload?: boolean }).__noReload)).toBe(true);
 });
 
 test("signed-in visitors see Open app on the site", async ({ page }) => {

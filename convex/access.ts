@@ -12,7 +12,7 @@ export async function requirePerm(ctx: QueryCtx | MutationCtx | ActionCtx, p: Pe
 
 /** Server-to-server calls from the Next.js API (which has already checked the user's role) carry a shared key. */
 export function requireServer(key: string) {
-  const expected = process.env.SERVER_KEY;
+  const expected = process.env.SERVER_KEY ?? process.env.CONVEX_SERVER_KEY;
   if (!expected || key.length !== expected.length) throw new Error("Forbidden");
   let diff = 0;
   for (let i = 0; i < key.length; i++) diff |= key.charCodeAt(i) ^ expected.charCodeAt(i);

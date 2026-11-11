@@ -7,6 +7,7 @@ import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 import { DEMO_USERS } from "@/lib/demoData";
 import { Button, ErrorNote, Notice, postJson } from "./ui";
 import { Mark } from "./mark";
+import { refreshMe } from "./me";
 
 function PasswordInput({ id, value, onChange, autoComplete }: { id: string; value: string; onChange: (v: string) => void; autoComplete?: string }) {
   const [show, setShow] = useState(false);
@@ -108,6 +109,9 @@ export function ClerkSignIn() {
     if (signIn.status !== "complete") return "This account needs a sign-in step this form does not support. Contact your administrator.";
     const { error } = await signIn.finalize();
     if (error) return error.message;
+    // The console is a client-side navigation, so the cached "signed out" session must be re-read first.
+    await refreshMe();
+    router.refresh();
     const next = params.get("next");
     router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/app");
   };
@@ -315,6 +319,8 @@ export function ClerkSignUp() {
       if (signUp.status === "complete") {
         const { error: finalErr } = await signUp.finalize();
         if (finalErr) { setErr(finalErr.message); return; }
+        await refreshMe();
+        router.refresh();
         router.push("/app/get-started");
       } else {
         setErr("Verification incomplete. Please try again.");
@@ -432,9 +438,11 @@ export function DemoQuickLogin() {
     setErr("");
     try {
       await postJson("/api/demo-login", { userId: id });
+      await refreshMe();
+      // Drop the router cache first: /app was prefetched while signed out and cached as a redirect to sign-in.
+      router.refresh();
       const next = params.get("next");
       router.push(next && next.startsWith("/") && !next.startsWith("//") ? next : "/app");
-      router.refresh();
     } catch (e) {
       setErr((e as Error).message);
       setBusy(null);

@@ -18,7 +18,9 @@ export function canonical(v: unknown): string {
 export const chainHash = (prev: string, body: unknown) => sha256Hex(prev + canonical(body));
 
 export async function verifyChain(entries: { prev: string; hash: string; body: unknown }[]): Promise<boolean> {
-  let prev = entries[0]?.prev ?? "GENESIS";
+  // The chain must start at GENESIS, otherwise deleting the oldest entries still verifies.
+  if (entries.length && entries[0].prev !== "GENESIS") return false;
+  let prev = "GENESIS";
   for (const e of entries) {
     if (e.prev !== prev || (await chainHash(prev, e.body)) !== e.hash) return false;
     prev = e.hash;

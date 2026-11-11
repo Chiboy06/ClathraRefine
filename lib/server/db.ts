@@ -38,7 +38,8 @@ const MAPPED: Partial<Record<Coll, { table: string; key: string }>> = {
 const RECORDS = "ClathraRecords";
 
 const convexUrl = process.env.CONVEX_URL; // server-only, so tests can switch it off at runtime
-const serverKey = process.env.CONVEX_SERVER_KEY;
+// Accept either name: Convex deployments read SERVER_KEY, while older Next env files used CONVEX_SERVER_KEY.
+const serverKey = process.env.CONVEX_SERVER_KEY ?? process.env.SERVER_KEY;
 const convexOn = () => !!convexUrl && !!serverKey;
 let cx: ConvexHttpClient | null = null;
 const convex = () => (cx ??= new ConvexHttpClient(convexUrl!));

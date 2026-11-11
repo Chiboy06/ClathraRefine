@@ -17,12 +17,15 @@ export async function ensureLedger() {
   const rows = await list<LedgerEntry>("ledger", 1);
   if (rows.length) return;
   const start = Date.UTC(2026, 9, 1);
+  // Fixed ids and hashes: two concurrent first reads write the same four rows instead of forking the chain.
+  let prev = "GENESIS";
   for (let w = 0; w < 4; w++) {
     const batch = Array.from({ length: 24 }, (_, h) => ({ h: w * 24 + h, kgh: +(184.2 + Math.sin(h / 3) * 6).toFixed(1) }));
     const tonnes = Math.round(batch.reduce((s, b) => s + b.kgh, 0) * 7 / 1000 / 2.4 * 10) / 10;
-    await appendLedger(
-      { type: "issue", lot_id: "LOT-CRB-2026-10", week: w + 1, tokens: tonnes, telemetry_batch_sha256: await sha256Hex(canonical(batch)), source_tag: "FQ-501", simulated: true },
-      start + w * 7 * 86_400_000,
-    );
+    const at = start + w * 7 * 86_400_000;
+    const body = { type: "issue", lot_id: "LOT-CRB-2026-10", week: w + 1, tokens: tonnes, telemetry_batch_sha256: await sha256Hex(canonical(batch)), source_tag: "FQ-501", simulated: true, at };
+    const hash = await chainHash(prev, body);
+    await put("ledger", { id: `${at.toString().padStart(15, "0")}#seed-${w + 1}`, created_at: at, body, prev, hash });
+    prev = hash;
   }
 }

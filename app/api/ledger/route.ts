@@ -7,7 +7,12 @@ export const dynamic = "force-dynamic";
 /** Public provenance ledger for carbon tokens, with a chain integrity check. */
 export async function GET() {
   await ensureLedger();
-  const rows = await list<LedgerEntry>("ledger", 500);
+  // Public route: never expose the buyer's account id from a retirement entry.
+  const rows = (await list<LedgerEntry>("ledger", 500)).map((row) => {
+    const body = { ...row.body };
+    delete body.buyer;
+    return { ...row, body };
+  });
   const intact = await verifyChain([...rows].reverse());
   return Response.json({ rows, intact });
 }

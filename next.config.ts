@@ -51,13 +51,14 @@ const nextConfig: NextConfig = {
       relays: "/app/plant",
       measurements: "/app/history",
       "marketplace/rfq": "/app/marketplace/orders",
-      "devices/:p*": "/app/maintenance",
     };
     const top: Record<string, string> = {
       dashboard: "/app",
       onboarding: "/app/settings/connect",
       welcome: "/app/organisation",
       admin: "/app/admin",
+      // Old top-level device links still work, but the live page sits under /app and must not be shadowed.
+      "devices/:p*": "/app/devices/:p*",
       ...app,
     };
     const sameUnderApp = ["fleet", "departments", "alarms", "marketplace/:p*", "marketplace", "audits", "audit-history", "support"];

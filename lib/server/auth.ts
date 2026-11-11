@@ -13,12 +13,17 @@ export const demoAuthEnabled = () => !clerkEnabled() && process.env.DEMO_AUTH ==
 
 export async function getSession(): Promise<Session | null> {
   if (clerkEnabled()) {
-    const { userId, sessionClaims } = await auth();
+    const { userId, sessionClaims, orgId: activeOrgId } = await auth();
     if (!userId) return null;
-    const meta = sessionClaims?.metadata as { role?: string; orgId?: string } | undefined;
-    const role = isRole(meta?.role) ? meta.role : "viewer";
-    const orgId = typeof meta?.orgId === "string" ? meta.orgId : undefined;
     const u = await currentUser();
+    // The session token only carries public metadata when the Clerk session template adds it.
+    // Fall back to the user record and the active organisation so roles and tenancy still resolve.
+    const claims = sessionClaims?.metadata as { role?: unknown; orgId?: unknown } | undefined;
+    const meta = u?.publicMetadata as { role?: unknown; orgId?: unknown } | undefined;
+    const rawRole = claims?.role ?? meta?.role;
+    const role = isRole(rawRole) ? rawRole : "viewer";
+    const rawOrgId = claims?.orgId ?? meta?.orgId;
+    const orgId = typeof rawOrgId === "string" ? rawOrgId : (activeOrgId ?? undefined);
     return {
       userId,
       role,

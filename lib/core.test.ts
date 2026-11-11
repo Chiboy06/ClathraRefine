@@ -164,6 +164,16 @@ describe("hash chain", () => {
     entries[0].body.n = 9;
     expect(await verifyChain(entries)).toBe(false);
   });
+  it("detects a truncated chain", async () => {
+    const a = await chainHash("GENESIS", { n: 1 });
+    const b = await chainHash(a, { n: 2 });
+    const entries = [
+      { prev: "GENESIS", hash: a, body: { n: 1 } },
+      { prev: a, hash: b, body: { n: 2 } },
+    ];
+    // Removing the oldest entry leaves a self-consistent chain that must still fail.
+    expect(await verifyChain(entries.slice(1))).toBe(false);
+  });
 });
 
 import { priceCart } from "./cart";

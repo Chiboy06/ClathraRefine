@@ -15,6 +15,8 @@ for (const route of ROUTES) {
         await page.setViewportSize({ width: 1440, height: 900 });
         const res = await page.goto(route);
         expect(res?.status(), `${route} ${theme} ${mode}`).toBeLessThan(400);
+        // goto follows redirects; a page reachable only through a stale redirect must fail here.
+        expect(new URL(page.url()).pathname, `${route} redirected away`).toBe(route);
         await expect(page.locator("h1").first()).toBeVisible();
         await expect(page.getByText("This page hit an error")).toHaveCount(0);
         await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
