@@ -74,7 +74,7 @@ export function ConnectDevice({ embedded = false }: { embedded?: boolean }) {
       }
       setTest({ state: "fail", text: "No reply within 10 s. Likely causes: board off or on another Wi-Fi, venue network blocking port 8883, wrong thing name, or the IoT rule for cmd/ack not added." });
     } catch (e) {
-      setTest({ state: "fail", text: `${(e as Error).message}. In LIVE mode the app publishes through AWS IoT: check AWS_ROLE_ARN and IOT_ENDPOINT on the server.` });
+      setTest({ state: "fail", text: (e as Error).message });
     }
   };
 
@@ -132,7 +132,7 @@ export function ConnectDevice({ embedded = false }: { embedded?: boolean }) {
         </Step>
         <Step n={5} title="Test connection" done={test.state === "ok"}>
           <div className="flex flex-wrap items-center gap-3">
-            <Button type="button" variant="primary" busy={test.state === "testing"} onClick={testConnection} data-testid="test-connection">
+            <Button type="button" variant="primary" busy={test.state === "testing"} disabled={p.mode === "LIVE" && me?.commands === false} onClick={testConnection} data-testid="test-connection">
               <PlugZap aria-hidden className="h-4 w-4" /> Test connection
             </Button>
             {p.mode === "DEMO" && <Badge tone="warn">DEMO: answered by the scenario</Badge>}
