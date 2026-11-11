@@ -20,7 +20,13 @@ export async function POST(req: Request) {
   const id = newId(at);
   if (b.data.mode === "LIVE") {
     if (!awsEnabled() || !process.env.IOT_ENDPOINT) return new Response("Sending commands is not set up: add AWS_ROLE_ARN and IOT_ENDPOINT in Vercel, then redeploy", { status: 503 });
-    await publishCmd("scram");
+    try {
+      await publishCmd("scram");
+    } catch (e) {
+      // 502: the app is fine, AWS refused; the message names the setting to fix. A SCRAM that never left is audited.
+      await audit(s, "scram", "board", "refused", (e as Error).message);
+      return new Response((e as Error).message, { status: 502 });
+    }
   }
   await put("commands", { id, created_at: at, kind: "scram", mode: b.data.mode, requested_by: s.userId, requested_name: s.name, status: "sent" });
   await audit(s, "scram", b.data.mode === "LIVE" ? "board" : "demo scenario", "ok", `request ${id}`);

@@ -17,7 +17,12 @@ export async function POST(req: Request) {
   const { cmd, value, mode } = b.data;
   if (mode === "LIVE") {
     if (!awsEnabled() || !process.env.IOT_ENDPOINT) return new Response("Sending commands is not set up: add AWS_ROLE_ARN and IOT_ENDPOINT in Vercel, then redeploy", { status: 503 });
-    await publishCmd({ cmd, value } as Parameters<typeof publishCmd>[0]);
+    try {
+      await publishCmd({ cmd, value } as Parameters<typeof publishCmd>[0]);
+    } catch (e) {
+      // 502: the app is fine, AWS refused; the message names the setting to fix.
+      return new Response((e as Error).message, { status: 502 });
+    }
   }
   const at = Date.now();
   const id = newId(at);

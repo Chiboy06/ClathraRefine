@@ -14,7 +14,12 @@ export async function POST(req: Request) {
   const at = Date.now();
   if (b.data.mode === "LIVE") {
     if (!awsEnabled() || !process.env.IOT_ENDPOINT) return new Response("Sending commands is not set up: add AWS_ROLE_ARN and IOT_ENDPOINT in Vercel, then redeploy", { status: 503 });
-    await publishCmd("ping");
+    try {
+      await publishCmd("ping");
+    } catch (e) {
+      // 502: the app is fine, AWS refused; the message names the setting to fix.
+      return new Response((e as Error).message, { status: 502 });
+    }
   }
   const id = newId(at);
   await put("commands", { id, created_at: at, kind: "ping", mode: b.data.mode, requested_by: gate.session.userId, requested_name: gate.session.name, status: "sent" });

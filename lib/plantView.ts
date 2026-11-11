@@ -43,8 +43,9 @@ export function plantView(snap: Snapshot, forecast: { t: number; v: number }[], 
   const inPpm = l?.co2_in_mv !== undefined ? ppmFromMv(l.co2_in_mv, cal.in ?? DEFAULT_CAL) : null;
   const outPpm = l?.co2_out_mv !== undefined ? ppmFromMv(l.co2_out_mv, cal.out ?? DEFAULT_CAL) : null;
   const coSim = demo || inPpm === null || outPpm === null;
-  const cIn = inPpm ?? 8000;
-  const cOut = outPpm ?? 640;
+  // Removal and capture need a real pair: never compare a real outlet reading with a simulated inlet.
+  const cIn = coSim ? 8000 : inPpm!;
+  const cOut = coSim ? 640 : outPpm!;
   const gas = l?.gas_lpm ?? (relayOn(snap.relayMask, 1) ? 1 : 0);
   const capture = captureGPerMin(gas, cIn, cOut);
   // Integrate capture over today's readings (the session's history).
@@ -64,8 +65,8 @@ export function plantView(snap: Snapshot, forecast: { t: number; v: number }[], 
   return {
     at: l?.receivedAt ?? null,
     mode: snap.mode,
-    co2InPpm: r(cIn, "ppm", coSim),
-    co2OutPpm: r(cOut, "ppm", coSim),
+    co2InPpm: r(inPpm ?? 8000, "ppm", demo || inPpm === null),
+    co2OutPpm: r(outPpm ?? 640, "ppm", demo || outPpm === null),
     reductionPct: r(reductionPct(cIn, cOut), "%", coSim),
     captureGMin: r(capture, "g/min", coSim),
     capturedTodayG: r(today, "g", coSim),

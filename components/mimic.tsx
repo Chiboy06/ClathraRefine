@@ -119,10 +119,10 @@ export function Mimic({ v, layers, selected, onSelect, interlocks }: { v: PlantV
   );
 
   const rows: [string, string][] = [
-    ["AT-101 Ambient gas", `${num(v.ambient.mv)} mV`],
-    ["AT-102 Exhaust gas", `${num(v.exhaustMv)} mV`],
-    ["AT-103 Inlet CO2", `${num(v.co2InPpm.value)} ppm`],
-    ["AT-104 Outlet CO2", `${num(v.co2OutPpm.value)} ppm`],
+    ["AT-101 ambient", `${num(v.ambient.mv)} mV`],
+    ["AT-102 exhaust", `${num(v.exhaustMv)} mV`],
+    ["AT-103 CO2 in", `${num(v.co2InPpm.value)} ppm`],
+    ["AT-104 CO2 out", `${num(v.co2OutPpm.value)} ppm`],
     ["CO2 removed", `${num(v.reductionPct.value, 1)} %`],
     ["Gas flow", `${num(v.gasLpm.value, 2)} L/min`],
     ["Solvent flow", `${num(v.liquidLpm.value, 2)} L/min`],
