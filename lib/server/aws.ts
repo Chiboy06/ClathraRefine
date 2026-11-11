@@ -29,7 +29,10 @@ export type BoardCommand = { cmd: "scram" } | { cmd: "ping" } | { cmd: "mode"; v
 
 /** The firmware accepts only these commands and applies its own interlocks to mode, fan and pump. */
 export async function publishCmd(c: BoardCommand | "scram" | "ping") {
-  const payload = typeof c === "string" ? { cmd: c } : c;
+  // Fan and pump also carry {"relay", "state"}: firmware D.2 switches relays only from that form.
+  // Rev C and D.3 read cmd and value and ignore the extra fields.
+  const payload =
+    typeof c === "string" ? { cmd: c } : c.cmd === "fan" || c.cmd === "pump" ? { ...c, relay: c.cmd === "fan" ? 0 : 1, state: c.value === "on" } : c;
   try {
     await aws().iot.send(
       new PublishCommand({

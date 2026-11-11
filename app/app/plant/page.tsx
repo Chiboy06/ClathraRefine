@@ -42,12 +42,20 @@ export default function PlantDiagram() {
     if (s.phase === "waiting" && (!ack || ack.accepted)) s = sbo(s, { type: "state", on: s.eq === "fan" ? v.fanOn : v.pumpOn });
   }
   const eq = s.phase === "idle" ? null : s.eq;
+  // Firmware D.2 has no manual mode and no command interlocks: relays switch directly, and its own automation
+  // takes over during a hazard. The app's checks are the only ones before the relay moves.
+  const legacy = p.mode === "LIVE" && (p.latest?.fw ?? "").startsWith("rev-D.2");
   const isOn = eq === "fan" ? v.fanOn : v.pumpOn;
 
   const execute = async () => {
     if (s.phase !== "armed") return;
     const action = s.action;
     const target = s.eq;
+    const blocked = target === "fan" && action === "off" ? il.fanOff : target === "pump" && action === "on" ? il.pumpOn : null;
+    if (blocked) {
+      setStored({ phase: "rejected", eq: target, action, reason: blocked });
+      return;
+    }
     const now = Date.now();
     setStored(sbo(s, { type: "execute", now }));
     setErr("");
@@ -111,6 +119,11 @@ export default function PlantDiagram() {
       </div>
 
       <Card title="Control mode" help="Manual mode lets you start and stop the fan and pump. Automatic safety always wins: exhaust gas, a critical level, a sensor fault, a trip or SCRAM returns the board to automatic, and so does 10 minutes without a command.">
+        {legacy ? (
+          <p className="text-sm">
+            This board runs firmware rev D.2, which has no manual mode. Fan and pump commands switch the relay directly, after the checks on this page, and the board&apos;s automatic safety takes over during any hazard.
+          </p>
+        ) : (
         <div className="flex flex-wrap items-center gap-3">
           <Segmented
             label="Control mode"
@@ -129,6 +142,7 @@ export default function PlantDiagram() {
           )}
           {!allowed && <span className="text-sm text-muted">Operators and supervisors can operate equipment.</span>}
         </div>
+        )}
         {err && <div className="mt-3"><ErrorNote>{err}</ErrorNote></div>}
       </Card>
 
